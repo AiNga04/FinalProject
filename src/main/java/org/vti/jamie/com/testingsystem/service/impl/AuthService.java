@@ -102,6 +102,7 @@ public class AuthService implements IAuthService {
                 .expiresAt(expiresAt)
                 .claim("username", account.getUsername())
                 .claim("accountType", account.getAccountType().name())
+                .claim("tokenVersion", account.getTokenVersion())
                 .build();
 
         // 5. Ký token bằng HS256

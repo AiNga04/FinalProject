@@ -28,12 +28,21 @@ public record ApiResponse<T>(
             String message,
             T data
     ) {
+        return success(status, message, data, null);
+    }
+
+    public static <T> ApiResponse<T> success(
+            int status,
+            String message,
+            T data,
+            Object data2nd
+    ) {
         return new ApiResponse<>(
                 1,
                 Instant.now().getEpochSecond(),
                 "",
                 data,
-                null,
+                data2nd,
                 new ErrorInfo(
                         status,
                         message,

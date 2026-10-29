@@ -7,6 +7,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.config.ModelMapperConfig;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
+import org.vti.jamie.com.testingsystem.repository.IRefreshTokenRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 import tools.jackson.databind.json.JsonMapper;
@@ -23,7 +25,8 @@ class AccountServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(IAccountRepository.class);
-        service = new AccountService(repository, new ModelMapperConfig().modelMapper());
+        service = new AccountService(repository, new ModelMapperConfig().modelMapper(),
+                new BCryptPasswordEncoder(), mock(IRefreshTokenRepository.class));
     }
 
     @Test

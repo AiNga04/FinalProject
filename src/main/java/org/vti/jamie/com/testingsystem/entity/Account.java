@@ -41,4 +41,7 @@ public class Account extends BaseEntity {
 
     @Column(name = "department_id")
     private Long departmentId;
+
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion;
 }

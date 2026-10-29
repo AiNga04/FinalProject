@@ -15,6 +15,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 import org.springframework.security.web.SecurityFilterChain;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 
@@ -56,11 +58,30 @@ public class SecurityConfig {
 
     // 4. API authorization
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                  IAccountRepository accountRepository) throws Exception {
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
 
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwt ->
-                List.of(new SimpleGrantedAuthority("ACCOUNT_TYPE_" + jwt.getClaim("accountType"))));
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            long accountId;
+            try {
+                accountId = Long.parseLong(jwt.getSubject());
+            } catch (NumberFormatException exception) {
+                throw new OAuth2AuthenticationException("invalid_token");
+            }
+            var account = accountRepository.findById(accountId)
+                    .orElseThrow(() -> new OAuth2AuthenticationException("invalid_token"));
+            Object versionClaim = jwt.getClaim("tokenVersion");
+            // Access token cũ trước migration V3 được coi là version 0.
+            long tokenVersion = versionClaim == null ? 0
+                    : versionClaim instanceof Number version ? version.longValue() : -1;
+            if (account.getStatus() != EN_Status.ACTIVE
+                    || tokenVersion != account.getTokenVersion()) {
+                throw new OAuth2AuthenticationException("invalid_token");
+            }
+            return List.of(new SimpleGrantedAuthority(
+                    "ACCOUNT_TYPE_" + account.getAccountType().name()));
+        });
 
         http
             .csrf(AbstractHttpConfigurer::disable)

@@ -1,0 +1,1 @@
+ALTER TABLE account ADD COLUMN token_version INT NOT NULL DEFAULT 0;
