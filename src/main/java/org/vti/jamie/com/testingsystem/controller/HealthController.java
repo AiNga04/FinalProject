@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.common.controller;
+package org.vti.jamie.com.testingsystem.controller;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;

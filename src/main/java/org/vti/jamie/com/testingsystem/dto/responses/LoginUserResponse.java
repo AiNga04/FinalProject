@@ -1,31 +1,17 @@
 package org.vti.jamie.com.testingsystem.dto.responses;
 
-import org.vti.jamie.com.testingsystem.entity.Account;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 
-import java.time.LocalDateTime;
-
-public record AccountResponse(
-    Long id,
-    String username,
-    String email,
-    String firstName,
-    String lastName,
-    String accountType,
-    String status,
-    Long departmentId,
-    LocalDateTime createdAt
-) {
-    public static AccountResponse from(Account account) {
-        return new AccountResponse(
-                account.getId(),
-                account.getUsername(),
-                account.getEmail(),
-                account.getFirstName(),
-                account.getLastName(),
-                account.getAccountType().name(),
-                account.getStatus().name(),
-                account.getDepartmentId(),
-                account.getCreatedAt()
-        );
-    }
+@Getter
+@Setter
+@NoArgsConstructor
+public class LoginUserResponse{
+    private Long id;
+    private String username;
+    private String firstName;
+    private String lastName;
+    private EN_AccountType accountType;
 }

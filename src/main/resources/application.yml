@@ -1,1 +1,14 @@
-spring.application.name=TestingSystem
+spring:
+  application:
+    name: TestingSystem
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+logging:
+  file:
+    name: logs/Application.log
+
+  level:
+    root: INFO
+    org.vti.jamie.com: DEBUG

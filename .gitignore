@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+.env
+!.env.example
+/logs/
+/target/
+/frontend/node_modules/
+/frontend/.next/

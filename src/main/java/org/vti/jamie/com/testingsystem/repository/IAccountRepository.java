@@ -10,13 +10,8 @@ import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 import java.util.Optional;
 
 @Repository
-public interface AccountRepository extends JpaRepository<Account, Long> {
+public interface IAccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByUsername(String username);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
-
-    Page<Account> findByStatusNot(
-            EN_Status status,
-            Pageable pageable
-    );
 }

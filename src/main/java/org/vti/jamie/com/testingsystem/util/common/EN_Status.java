@@ -1,4 +1,7 @@
 package org.vti.jamie.com.testingsystem.util.common;
 
-public class EN_Status {
+public enum EN_Status {
+    DELETED,
+    INACTIVE,
+    ACTIVE,
 }

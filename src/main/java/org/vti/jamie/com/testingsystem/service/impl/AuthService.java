@@ -2,9 +2,6 @@ package org.vti.jamie.com.testingsystem.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -18,9 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.dto.requests.LoginRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.AccountResponse;
 import org.vti.jamie.com.testingsystem.dto.responses.LoginResponse;
-import org.vti.jamie.com.testingsystem.repository.AccountRepository;
+import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 import org.vti.jamie.com.testingsystem.service.IAuthService;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
@@ -29,10 +25,11 @@ import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl implements IAuthService {
+public class AuthService implements IAuthService {
     private final AuthenticationManager authenticationManager;
-    private final AccountRepository accountRepository;
+    private final IAccountRepository accountRepository;
     private final JwtEncoder jwtEncoder;
+    private final RefreshTokenService refreshTokenService;
 
     @Value("${app.jwt.issuer}")
     private String issuer;
@@ -41,89 +38,73 @@ public class AuthServiceImpl implements IAuthService {
     private long accessTokenMinutes;
 
     @Override
-    public LoginResponse login(LoginRequest loginRequest) {
-        // 1. Authenticate username/password
+    @Transactional
+    public LoginResponse login(LoginRequest request) {
+
+        // 1. Kiểm tra username và password
         try {
             authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.username(),
-                        loginRequest.password()
-                )
+                    new UsernamePasswordAuthenticationToken(
+                            request.username(),
+                            request.password()
+                    )
             );
-        } catch (BadCredentialsException e) {
+        } catch (BadCredentialsException exception) {
             throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "Username hoặc password không chính xác"
+                    HttpStatus.UNAUTHORIZED,
+                    "Username hoặc password không chính xác"
             );
         }
 
-        // 2. Load verified account
+        // 2. Lấy thông tin tài khoản đã xác thực
         var account = accountRepository
-            .findByUsername(loginRequest.username())
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "Authentication failed"
-            ));
+                .findByUsername(request.username())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Username hoặc password không chính xác"
+                ));
 
-        // 3. Verify account status
+        // 3. Kiểm tra trạng thái tài khoản
         if (account.getStatus() != EN_Status.ACTIVE) {
             throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "Tài khoản chưa được kích hoạt hoặc đã bị khóa"
+                    HttpStatus.FORBIDDEN,
+                    "Tài khoản chưa được kích hoạt hoặc đã bị khóa"
             );
         }
 
-        // 4. Create JWT claims
+        // 4. Chuẩn bị nội dung token
         Instant now = Instant.now();
 
-        Instant expiry = now.plus(
-                accessTokenMinutes, ChronoUnit.MINUTES
+        Instant expiresAt = now.plus(
+                accessTokenMinutes,
+                ChronoUnit.MINUTES
         );
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .subject(account.getId().toString())
                 .issuedAt(now)
-                .expiresAt(expiry)
+                .expiresAt(expiresAt)
                 .claim("username", account.getUsername())
-                .claim(
-                        "accountType",
-                        account.getAccountType().name()
-                )
+                .claim("accountType", account.getAccountType().name())
                 .build();
 
-        // 5. Sign JWT
-        JwsHeader header =
-                JwsHeader.with(MacAlgorithm.HS256).build();
+        // 5. Ký token bằng HS256
+        JwsHeader header = JwsHeader
+                .with(MacAlgorithm.HS256)
+                .build();
 
-        String token = jwtEncoder.encode(
+        String accessToken = jwtEncoder.encode(
                 JwtEncoderParameters.from(header, claims)
         ).getTokenValue();
 
-        // 6. Return response
+        // 6. Tạo refresh token và chỉ lưu bản băm trong database
+        String refreshToken = refreshTokenService.create(account);
+
+        // 7. Trả kết quả
         return new LoginResponse(
-                token,
-                "Bearer",
-                accessTokenMinutes * 60
+                accessToken,
+                refreshToken
         );
-    }
-
-    @Transactional(readOnly = true)
-    public Page<AccountResponse> getAccounts(
-            int page,
-            int size) {
-
-        PageRequest pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(
-                        Sort.Direction.DESC,
-                        "createdAt"
-                )
-        );
-
-        return accountRepository
-                .findByStatusNot(EN_Status.DELETED, pageable)
-                .map(AccountResponse::from);
     }
 }
