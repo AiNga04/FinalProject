@@ -90,16 +90,17 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh")
                 .permitAll()
 
+                // Mọi tài khoản đã xác thực đều được xem thông tin của chính mình.
+                .requestMatchers("/api/v1/accounts/me")
+                .authenticated()
+
                 // Admin only
                 .requestMatchers(
                         "/api/v1/accounts",
                         "/api/v1/accounts/**",
                         "/api/v1/departments",
                         "/api/v1/departments/**"
-                ).hasRole("ADMIN")
-
-                // Everything else blocked until configured
-                .requestMatchers("/api/v1/auth/me").authenticated()
+                ).hasAuthority("ACCOUNT_TYPE_ADMIN")
 
                     // Protect all unfinished APIs
                 .anyRequest()
