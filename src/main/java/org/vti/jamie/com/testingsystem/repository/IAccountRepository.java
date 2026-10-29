@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
 import java.util.Optional;
+import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface IAccountRepository extends JpaRepository<Account, Long>, JpaSpecificationExecutor<Account> {
@@ -22,4 +24,12 @@ public interface IAccountRepository extends JpaRepository<Account, Long>, JpaSpe
 
     @Query(value = "SELECT COUNT(*) FROM department WHERE id = :id AND status = 'ACTIVE'", nativeQuery = true)
     long countActiveDepartment(@Param("id") Long id);
+
+    long countByDepartmentIdAndStatusNot(Long departmentId, EN_Status status);
+
+    @Query("select account.departmentId as departmentId, count(account) as totalMember "
+            + "from Account account where account.departmentId in :ids and account.status <> :status "
+            + "group by account.departmentId")
+    List<DepartmentMemberCount> countMembersByDepartmentIds(@Param("ids") Collection<Long> ids,
+                                                           @Param("status") EN_Status status);
 }
