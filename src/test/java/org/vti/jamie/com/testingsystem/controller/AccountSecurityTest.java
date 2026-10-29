@@ -19,6 +19,8 @@ import org.vti.jamie.com.testingsystem.config.SecurityConfig;
 import org.vti.jamie.com.testingsystem.dto.responses.AccountResponse;
 import org.vti.jamie.com.testingsystem.exception.GlobalExceptionHandler;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
+import org.vti.jamie.com.testingsystem.repository.IRevokedSessionRepository;
+import org.vti.jamie.com.testingsystem.service.IAuthService;
 import org.vti.jamie.com.testingsystem.service.IAccountService;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
@@ -109,17 +111,20 @@ class AccountSecurityTest {
         when(repository.findById(3L)).thenReturn(Optional.of(account));
         when(decoder.decode(accountType)).thenReturn(Jwt.withTokenValue(accountType)
                 .header("alg", "HS256").subject("3")
+                .claim("sid", "session-" + accountType)
                 .claim("accountType", accountType).build());
     }
 
     @Configuration
     @EnableWebMvc
     @EnableWebSecurity
-    @Import({SecurityConfig.class, AccountController.class, GlobalExceptionHandler.class})
+    @Import({SecurityConfig.class, AccountController.class, AuthController.class, GlobalExceptionHandler.class})
     static class TestConfig {
         @Bean IAccountRepository accountRepository() { return mock(IAccountRepository.class); }
         @Bean IAccountService accountService() { return mock(IAccountService.class); }
         @Bean JwtDecoder jwtDecoder() { return mock(JwtDecoder.class); }
+        @Bean IRevokedSessionRepository revokedSessions() { return mock(IRevokedSessionRepository.class); }
+        @Bean IAuthService authService() { return mock(IAuthService.class); }
     }
 
     @Test
@@ -353,5 +358,54 @@ class AccountSecurityTest {
                     .andExpect(status().isBadRequest());
         }
         verifyNoInteractions(service);
+    }
+
+    @Test
+    void everyAccountTypeCanLogoutWithoutRequestBody() throws Exception {
+        for (String type : new String[]{"ADMIN", "MANAGER", "EMPLOYEE"}) {
+            stubToken(type);
+            mvc.perform(post("/api/v1/auth/logout").header("Authorization", "Bearer " + type))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.result").value(1))
+                    .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
+                    .andExpect(jsonPath("$.data2nd").value(org.hamcrest.Matchers.nullValue()))
+                    .andExpect(jsonPath("$.error.message").value("Đăng xuất thành công"));
+        }
+        verify(context.getBean(IAuthService.class), times(3)).logout(any(Jwt.class));
+    }
+
+    @Test
+    void logoutRequiresValidAccessToken() throws Exception {
+        mvc.perform(post("/api/v1/auth/logout")).andExpect(status().isUnauthorized());
+        verifyNoInteractions(context.getBean(IAuthService.class));
+    }
+
+    @Test
+    void loggedOutSessionIsBlockedButAnotherSessionForSameAccountStillWorks() throws Exception {
+        stubToken("ADMIN");
+        var revoked = context.getBean(IRevokedSessionRepository.class);
+        doAnswer(call -> {
+            when(revoked.existsById("session-ADMIN")).thenReturn(true);
+            return null;
+        }).when(context.getBean(IAuthService.class)).logout(any(Jwt.class));
+        when(decoder.decode("second-token")).thenReturn(Jwt.withTokenValue("second-token")
+                .header("alg", "HS256").subject("3").claim("sid", "other-session")
+                .claim("accountType", "ADMIN").build());
+
+        mvc.perform(post("/api/v1/auth/logout").header("Authorization", "Bearer ADMIN"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer ADMIN"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer second-token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void accessTokensWithoutSessionMustLoginAgain() throws Exception {
+        stubToken("ADMIN");
+        when(decoder.decode("legacy")).thenReturn(Jwt.withTokenValue("legacy")
+                .header("alg", "HS256").subject("3").claim("accountType", "ADMIN").build());
+        mvc.perform(get("/api/v1/accounts/me").header("Authorization", "Bearer legacy"))
+                .andExpect(status().isUnauthorized());
     }
 }

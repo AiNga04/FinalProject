@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,17 +76,23 @@ public class AuthService implements IAuthService {
             );
         }
 
-        return issueTokens(account);
+        return issueTokens(account, UUID.randomUUID().toString());
     }
 
     @Override
     @Transactional
     public LoginResponse refresh(RefreshTokenRequest request) {
-        Account account = refreshTokenService.consume(request.refreshToken());
-        return issueTokens(account);
+        var refreshToken = refreshTokenService.consume(request.refreshToken());
+        return issueTokens(refreshToken.getAccount(), refreshToken.getSessionId());
     }
 
-    private LoginResponse issueTokens(Account account) {
+    @Override
+    @Transactional
+    public void logout(Jwt jwt) {
+        refreshTokenService.revokeSession(jwt.getClaimAsString("sid"), Long.valueOf(jwt.getSubject()));
+    }
+
+    private LoginResponse issueTokens(Account account, String sessionId) {
         // Dùng chung cho login và refresh, luôn lấy quyền hiện tại từ database.
         Instant now = Instant.now();
 
@@ -103,6 +110,7 @@ public class AuthService implements IAuthService {
                 .claim("username", account.getUsername())
                 .claim("accountType", account.getAccountType().name())
                 .claim("tokenVersion", account.getTokenVersion())
+                .claim("sid", sessionId)
                 .build();
 
         // 5. Ký token bằng HS256
@@ -115,7 +123,7 @@ public class AuthService implements IAuthService {
         ).getTokenValue();
 
         // 6. Tạo refresh token và chỉ lưu bản băm trong database
-        String refreshToken = refreshTokenService.create(account);
+        String refreshToken = refreshTokenService.create(account, sessionId);
 
         // 7. Trả kết quả
         return new LoginResponse(

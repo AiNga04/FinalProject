@@ -18,6 +18,7 @@ import org.vti.jamie.com.testingsystem.dto.responses.DepartmentResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.exception.GlobalExceptionHandler;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
+import org.vti.jamie.com.testingsystem.repository.IRevokedSessionRepository;
 import org.vti.jamie.com.testingsystem.service.IDepartmentService;
 import org.vti.jamie.com.testingsystem.util.common.*;
 
@@ -163,7 +164,8 @@ class DepartmentSecurityTest {
         account.setAccountType(type);
         when(accounts.findById(3L)).thenReturn(Optional.of(account));
         when(decoder.decode(type.name())).thenReturn(Jwt.withTokenValue(type.name())
-                .header("alg", "HS256").subject("3").claim("accountType", type.name()).build());
+                .header("alg", "HS256").subject("3").claim("sid", "department-session")
+                .claim("accountType", type.name()).build());
     }
 
     @Configuration
@@ -174,5 +176,6 @@ class DepartmentSecurityTest {
         @Bean IAccountRepository accountRepository() { return mock(IAccountRepository.class); }
         @Bean IDepartmentService departmentService() { return mock(IDepartmentService.class); }
         @Bean JwtDecoder jwtDecoder() { return mock(JwtDecoder.class); }
+        @Bean IRevokedSessionRepository revokedSessions() { return mock(IRevokedSessionRepository.class); }
     }
 }

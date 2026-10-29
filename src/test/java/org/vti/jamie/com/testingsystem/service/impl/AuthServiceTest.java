@@ -18,6 +18,7 @@ import org.vti.jamie.com.testingsystem.dto.requests.LoginRequest;
 import org.vti.jamie.com.testingsystem.dto.requests.RefreshTokenRequest;
 import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
+import org.vti.jamie.com.testingsystem.entity.RefreshToken;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
@@ -53,7 +54,7 @@ class AuthServiceTest {
         when(accountRepository.findByUsername("admin")).thenReturn(Optional.of(account));
         when(jwtEncoder.encode(any())).thenReturn(Jwt.withTokenValue("access-token")
                 .header("alg", "HS256").subject("3").build());
-        when(refreshTokenService.create(account)).thenReturn("refresh-token");
+        when(refreshTokenService.create(eq(account), anyString())).thenReturn("refresh-token");
 
         var result = service.login(new LoginRequest("admin", "test-password"));
 
@@ -74,6 +75,7 @@ class AuthServiceTest {
         verify(jwtEncoder).encode(parameters.capture());
         var claims = parameters.getValue().getClaims();
         assertEquals("3", claims.getSubject());
+        assertNotNull(claims.getClaim("sid"));
         assertEquals(900, claims.getExpiresAt().getEpochSecond()
                 - claims.getIssuedAt().getEpochSecond());
     }
@@ -105,10 +107,13 @@ class AuthServiceTest {
     @Test
     void refreshIssuesNewPairUsingCurrentAccountWithoutPasswordAuthentication() {
         Account account = account(EN_Status.ACTIVE);
-        when(refreshTokenService.consume("old-refresh")).thenReturn(account);
+        RefreshToken token = new RefreshToken();
+        token.setAccount(account);
+        token.setSessionId("same-session");
+        when(refreshTokenService.consume("old-refresh")).thenReturn(token);
         when(jwtEncoder.encode(any())).thenReturn(Jwt.withTokenValue("new-access")
                 .header("alg", "HS256").subject("3").build());
-        when(refreshTokenService.create(account)).thenReturn("new-refresh");
+        when(refreshTokenService.create(account, "same-session")).thenReturn("new-refresh");
 
         var response = service.refresh(new RefreshTokenRequest("old-refresh"));
 
@@ -117,7 +122,10 @@ class AuthServiceTest {
         verifyNoInteractions(authenticationManager, accountRepository);
         var order = inOrder(refreshTokenService);
         order.verify(refreshTokenService).consume("old-refresh");
-        order.verify(refreshTokenService).create(account);
+        order.verify(refreshTokenService).create(account, "same-session");
+        var parameters = ArgumentCaptor.forClass(JwtEncoderParameters.class);
+        verify(jwtEncoder).encode(parameters.capture());
+        assertEquals("same-session", parameters.getValue().getClaims().getClaim("sid"));
     }
 
     @Test
@@ -129,7 +137,16 @@ class AuthServiceTest {
                 () -> service.refresh(new RefreshTokenRequest("invalid")));
 
         verifyNoInteractions(jwtEncoder, authenticationManager, accountRepository);
-        verify(refreshTokenService, never()).create(any());
+        verify(refreshTokenService, never()).create(any(), any());
+    }
+
+    @Test
+    void logoutRevokesSessionFromAuthenticatedToken() {
+        Jwt jwt = Jwt.withTokenValue("access-token").header("alg", "HS256")
+                .subject("3").claim("sid", "current-session").build();
+        service.logout(jwt);
+        verify(refreshTokenService).revokeSession("current-session", 3L);
+        verifyNoInteractions(jwtEncoder, authenticationManager, accountRepository);
     }
 
     private Account account(EN_Status status) {

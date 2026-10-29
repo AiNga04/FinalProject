@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.entity.RefreshToken;
+import org.vti.jamie.com.testingsystem.entity.RevokedSession;
+import org.vti.jamie.com.testingsystem.repository.IRevokedSessionRepository;
 import org.vti.jamie.com.testingsystem.repository.IRefreshTokenRepository;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
@@ -25,15 +27,22 @@ import java.util.HexFormat;
 public class RefreshTokenService {
 
     private final IRefreshTokenRepository refreshTokenRepository;
+    private final IRevokedSessionRepository revokedSessionRepository;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${app.jwt.refresh-token-days:7}")
     private long refreshTokenDays;
 
     @Transactional
-    public String create(Account account) {
+    public String create(Account account, String sessionId) {
         if (refreshTokenDays <= 0) {
             throw new IllegalStateException("Refresh token lifetime must be positive");
+        }
+        if (sessionId == null || sessionId.isBlank() || sessionId.length() > 36) {
+            throw new IllegalStateException("Invalid session ID");
+        }
+        if (revokedSessionRepository.existsById(sessionId)) {
+            throw invalidToken();
         }
 
         byte[] randomBytes = new byte[32];
@@ -44,6 +53,7 @@ public class RefreshTokenService {
         RefreshToken token = new RefreshToken();
         token.setAccount(account);
         token.setTokenHash(hash(rawToken));
+        token.setSessionId(sessionId);
         token.setCreatedAt(now);
         token.setExpiresAt(now.plus(refreshTokenDays, ChronoUnit.DAYS));
         refreshTokenRepository.save(token);
@@ -53,7 +63,7 @@ public class RefreshTokenService {
 
     // Gọi trong transaction của AuthService.refresh để thu hồi và cấp mới nguyên tử.
     @Transactional
-    public Account consume(String rawToken) {
+    public RefreshToken consume(String rawToken) {
         if (rawToken == null || rawToken.isBlank() || rawToken.length() > 512) {
             throw invalidToken();
         }
@@ -61,7 +71,9 @@ public class RefreshTokenService {
         RefreshToken token = refreshTokenRepository.findByTokenHashForUpdate(hash(rawToken))
                 .orElseThrow(this::invalidToken);
         Instant now = Instant.now();
-        if (token.getRevokedAt() != null || !token.getExpiresAt().isAfter(now)) {
+        if (token.getRevokedAt() != null || !token.getExpiresAt().isAfter(now)
+                || token.getSessionId() == null
+                || revokedSessionRepository.existsById(token.getSessionId())) {
             throw invalidToken();
         }
 
@@ -73,7 +85,25 @@ public class RefreshTokenService {
 
         token.setRevokedAt(now);
         refreshTokenRepository.save(token);
-        return account;
+        return token;
+    }
+
+    @Transactional
+    public void revokeSession(String sessionId, Long accountId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Access token không hợp lệ");
+        }
+        Instant now = Instant.now();
+        // Giữ dấu thu hồi độc lập với từng refresh token để chặn cả phiên,
+        // kể cả khi có refresh diễn ra đồng thời với logout.
+        if (!revokedSessionRepository.existsById(sessionId)) {
+            RevokedSession revoked = new RevokedSession();
+            revoked.setSessionId(sessionId);
+            revoked.setAccountId(accountId);
+            revoked.setRevokedAt(now);
+            revokedSessionRepository.saveAndFlush(revoked);
+        }
+        refreshTokenRepository.revokeBySession(sessionId, accountId, now);
     }
 
     private ResponseStatusException invalidToken() {

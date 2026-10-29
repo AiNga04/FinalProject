@@ -25,6 +25,9 @@ public class RefreshToken {
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
+    @Column(name = "session_id", length = 36)
+    private String sessionId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

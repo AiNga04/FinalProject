@@ -19,6 +19,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 import org.springframework.security.web.SecurityFilterChain;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
+import org.vti.jamie.com.testingsystem.repository.IRevokedSessionRepository;
 
 import java.util.List;
 
@@ -59,7 +60,8 @@ public class SecurityConfig {
     // 4. API authorization
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                  IAccountRepository accountRepository) throws Exception {
+                                                  IAccountRepository accountRepository,
+                                                  IRevokedSessionRepository revokedSessionRepository) throws Exception {
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
 
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
@@ -71,6 +73,10 @@ public class SecurityConfig {
             }
             var account = accountRepository.findById(accountId)
                     .orElseThrow(() -> new OAuth2AuthenticationException("invalid_token"));
+            String sessionId = jwt.getClaimAsString("sid");
+            if (sessionId == null || sessionId.isBlank() || revokedSessionRepository.existsById(sessionId)) {
+                throw new OAuth2AuthenticationException("invalid_token");
+            }
             Object versionClaim = jwt.getClaim("tokenVersion");
             // Access token cũ trước migration V3 được coi là version 0.
             long tokenVersion = versionClaim == null ? 0
@@ -112,7 +118,7 @@ public class SecurityConfig {
                 .permitAll()
 
                 // Mọi tài khoản đã xác thực đều được xem thông tin của chính mình.
-                .requestMatchers("/api/v1/accounts/me")
+                .requestMatchers("/api/v1/accounts/me", "/api/v1/auth/logout")
                 .authenticated()
 
                 // Admin only
