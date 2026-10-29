@@ -2,11 +2,14 @@ package org.vti.jamie.com.testingsystem.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.entity.RefreshToken;
 import org.vti.jamie.com.testingsystem.repository.IRefreshTokenRepository;
+import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -46,6 +49,36 @@ public class RefreshTokenService {
         refreshTokenRepository.save(token);
 
         return rawToken;
+    }
+
+    // Gọi trong transaction của AuthService.refresh để thu hồi và cấp mới nguyên tử.
+    @Transactional
+    public Account consume(String rawToken) {
+        if (rawToken == null || rawToken.isBlank() || rawToken.length() > 512) {
+            throw invalidToken();
+        }
+
+        RefreshToken token = refreshTokenRepository.findByTokenHashForUpdate(hash(rawToken))
+                .orElseThrow(this::invalidToken);
+        Instant now = Instant.now();
+        if (token.getRevokedAt() != null || !token.getExpiresAt().isAfter(now)) {
+            throw invalidToken();
+        }
+
+        Account account = token.getAccount();
+        if (account.getStatus() != EN_Status.ACTIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Tài khoản chưa được kích hoạt hoặc đã bị khóa");
+        }
+
+        token.setRevokedAt(now);
+        refreshTokenRepository.save(token);
+        return account;
+    }
+
+    private ResponseStatusException invalidToken() {
+        return new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                "Refresh token không hợp lệ hoặc đã hết hạn");
     }
 
     private String hash(String rawToken) {

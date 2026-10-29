@@ -87,7 +87,7 @@ public class SecurityConfig {
                 .requestMatchers("/error")
                 .permitAll()
 
-                .requestMatchers("/api/v1/auth/login")
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh")
                 .permitAll()
 
                 // Admin only

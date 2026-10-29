@@ -10,6 +10,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.entity.RefreshToken;
 import org.vti.jamie.com.testingsystem.repository.IRefreshTokenRepository;
+import org.vti.jamie.com.testingsystem.util.common.EN_Status;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -17,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -65,5 +69,78 @@ class RefreshTokenServiceTest {
         ReflectionTestUtils.setField(service, "refreshTokenDays", 0L);
         assertThrows(IllegalStateException.class, () -> service.create(new Account()));
         verifyNoInteractions(repository);
+    }
+
+    @Test
+    void validTokenIsConsumedAndCannotBeReused() throws Exception {
+        RefreshToken token = usableToken();
+        when(repository.findByTokenHashForUpdate(hash("raw-token")))
+                .thenReturn(Optional.of(token));
+
+        assertSame(token.getAccount(), service.consume("raw-token"));
+        assertNotNull(token.getRevokedAt());
+        verify(repository).save(token);
+
+        var exception = assertThrows(ResponseStatusException.class,
+                () -> service.consume("raw-token"));
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
+        verify(repository, times(1)).save(token);
+    }
+
+    @Test
+    void unknownTokenIsRejected() throws Exception {
+        when(repository.findByTokenHashForUpdate(hash("unknown")))
+                .thenReturn(Optional.empty());
+        var exception = assertThrows(ResponseStatusException.class,
+                () -> service.consume("unknown"));
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void expiredTokenIsRejected() throws Exception {
+        RefreshToken token = usableToken();
+        token.setExpiresAt(Instant.now().minusSeconds(1));
+        when(repository.findByTokenHashForUpdate(hash("expired")))
+                .thenReturn(Optional.of(token));
+        var exception = assertThrows(ResponseStatusException.class,
+                () -> service.consume("expired"));
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
+        assertNull(token.getRevokedAt());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void inactiveAccountCannotRefresh() throws Exception {
+        RefreshToken token = usableToken();
+        token.getAccount().setStatus(EN_Status.INACTIVE);
+        when(repository.findByTokenHashForUpdate(hash("inactive")))
+                .thenReturn(Optional.of(token));
+        var exception = assertThrows(ResponseStatusException.class,
+                () -> service.consume("inactive"));
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void blankTokenIsRejectedWithoutDatabaseQuery() {
+        var exception = assertThrows(ResponseStatusException.class,
+                () -> service.consume(" "));
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
+        verifyNoInteractions(repository);
+    }
+
+    private RefreshToken usableToken() {
+        Account account = new Account();
+        account.setStatus(EN_Status.ACTIVE);
+        RefreshToken token = new RefreshToken();
+        token.setAccount(account);
+        token.setExpiresAt(Instant.now().plusSeconds(60));
+        return token;
+    }
+
+    private String hash(String token) throws Exception {
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(token.getBytes(StandardCharsets.UTF_8)));
     }
 }

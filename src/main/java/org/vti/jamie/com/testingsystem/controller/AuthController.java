@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.vti.jamie.com.testingsystem.dto.requests.LoginRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.RefreshTokenRequest;
 import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
 import org.vti.jamie.com.testingsystem.dto.responses.LoginResponse;
 import org.vti.jamie.com.testingsystem.service.IAuthService;
@@ -32,5 +33,16 @@ public class AuthController {
                         response
                 )
         );
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Cấp cặp token mới bằng refresh token")
+    public ResponseEntity<ApiResponse<LoginResponse>> refresh(
+            @Valid @RequestBody RefreshTokenRequest request
+    ) {
+        LoginResponse response = authService.refresh(request);
+        return ResponseEntity.ok(ApiResponse.success(
+                200, "Làm mới token thành công", response
+        ));
     }
 }

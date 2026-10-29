@@ -15,6 +15,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.dto.requests.LoginRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.RefreshTokenRequest;
 import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
@@ -99,6 +100,36 @@ class AuthServiceTest {
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         verifyNoInteractions(jwtEncoder, refreshTokenService);
+    }
+
+    @Test
+    void refreshIssuesNewPairUsingCurrentAccountWithoutPasswordAuthentication() {
+        Account account = account(EN_Status.ACTIVE);
+        when(refreshTokenService.consume("old-refresh")).thenReturn(account);
+        when(jwtEncoder.encode(any())).thenReturn(Jwt.withTokenValue("new-access")
+                .header("alg", "HS256").subject("3").build());
+        when(refreshTokenService.create(account)).thenReturn("new-refresh");
+
+        var response = service.refresh(new RefreshTokenRequest("old-refresh"));
+
+        assertEquals("new-access", response.accessToken());
+        assertEquals("new-refresh", response.refreshToken());
+        verifyNoInteractions(authenticationManager, accountRepository);
+        var order = inOrder(refreshTokenService);
+        order.verify(refreshTokenService).consume("old-refresh");
+        order.verify(refreshTokenService).create(account);
+    }
+
+    @Test
+    void rejectedRefreshTokenDoesNotIssueAnyTokens() {
+        when(refreshTokenService.consume("invalid"))
+                .thenThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+        assertThrows(ResponseStatusException.class,
+                () -> service.refresh(new RefreshTokenRequest("invalid")));
+
+        verifyNoInteractions(jwtEncoder, authenticationManager, accountRepository);
+        verify(refreshTokenService, never()).create(any());
     }
 
     private Account account(EN_Status status) {

@@ -15,13 +15,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.dto.requests.LoginRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.RefreshTokenRequest;
 import org.vti.jamie.com.testingsystem.dto.responses.LoginResponse;
+import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 import org.vti.jamie.com.testingsystem.service.IAuthService;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -72,7 +75,18 @@ public class AuthService implements IAuthService {
             );
         }
 
-        // 4. Chuẩn bị nội dung token
+        return issueTokens(account);
+    }
+
+    @Override
+    @Transactional
+    public LoginResponse refresh(RefreshTokenRequest request) {
+        Account account = refreshTokenService.consume(request.refreshToken());
+        return issueTokens(account);
+    }
+
+    private LoginResponse issueTokens(Account account) {
+        // Dùng chung cho login và refresh, luôn lấy quyền hiện tại từ database.
         Instant now = Instant.now();
 
         Instant expiresAt = now.plus(
@@ -81,6 +95,7 @@ public class AuthService implements IAuthService {
         );
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
+                .id(UUID.randomUUID().toString())
                 .issuer(issuer)
                 .subject(account.getId().toString())
                 .issuedAt(now)
