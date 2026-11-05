@@ -17,20 +17,25 @@ public class UpdateAccountRequest {
     @Pattern(regexp = "(?sU).*\\S.*", message = "Username không được để trống")
     @Size(max = 50)
     private String username;
+
     @JsonSetter(nulls = Nulls.FAIL)
     @Pattern(regexp = "(?sU).*\\S.*", message = "Email không được để trống")
     @Email @Size(max = 254)
     private String email;
+
     @JsonSetter(nulls = Nulls.FAIL)
     @Pattern(regexp = "(?sU).*\\S.*", message = "First name không được để trống")
     @Size(max = 50)
     private String firstName;
+
     @JsonSetter(nulls = Nulls.FAIL)
     @Pattern(regexp = "(?sU).*\\S.*", message = "Last name không được để trống")
     @Size(max = 50)
     private String lastName;
+
     @JsonSetter(nulls = Nulls.FAIL)
     private EN_AccountType accountType;
+
     @Positive
     private Long departmentId;
 

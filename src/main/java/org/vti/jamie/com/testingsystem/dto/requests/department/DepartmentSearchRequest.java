@@ -13,15 +13,21 @@ import java.time.LocalDate;
 public class DepartmentSearchRequest {
     @Min(0)
     private int page = 0;
+
     @Min(1) @Max(100)
     private int size = 10;
+
     @Size(max = 100)
     private String search;
+
     @Size(max = 30)
     private String type;
+
     private EN_Status status;
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate minCreatedDate;
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate maxCreatedDate;
 }
