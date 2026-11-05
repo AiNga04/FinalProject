@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class BaseEntity {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private EN_Status status = EN_Status.ACTIVE;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -30,7 +30,6 @@ public class BaseEntity {
     @Column(name = "updated_by")
     private Long updatedBy;
 
-    @Column(name = "timer")
     private LocalDateTime timer;
 
     @PrePersist

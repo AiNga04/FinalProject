@@ -98,7 +98,7 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
                 // API Health Check
-                .requestMatchers("/api/v1/health")
+                .requestMatchers("/health")
                 .permitAll()
 
                 // Swagger UI
@@ -114,19 +114,19 @@ public class SecurityConfig {
                 .requestMatchers("/error")
                 .permitAll()
 
-                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh")
+                .requestMatchers("/auth/login", "/auth/refresh")
                 .permitAll()
 
                 // Mọi tài khoản đã xác thực đều được xem thông tin của chính mình.
-                .requestMatchers("/api/v1/accounts/me", "/api/v1/auth/logout")
+                .requestMatchers("/accounts/me", "/auth/logout")
                 .authenticated()
 
                 // Admin only
                 .requestMatchers(
-                        "/api/v1/accounts",
-                        "/api/v1/accounts/**",
-                        "/api/v1/departments",
-                        "/api/v1/departments/**"
+                        "/accounts",
+                        "/accounts/**",
+                        "/departments",
+                        "/departments/**"
                 ).hasAuthority("ACCOUNT_TYPE_ADMIN")
 
                     // Protect all unfinished APIs

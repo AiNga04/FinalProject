@@ -4,6 +4,9 @@ import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.annotation.*;
 import org.springframework.data.domain.*;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,8 +16,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.vti.jamie.com.testingsystem.config.SecurityConfig;
-import org.vti.jamie.com.testingsystem.dto.requests.*;
-import org.vti.jamie.com.testingsystem.dto.responses.DepartmentResponse;
+import org.vti.jamie.com.testingsystem.dto.requests.department.DepartmentSearchRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.department.UpdateDepartmentRequest;
+import org.vti.jamie.com.testingsystem.dto.responses.department.DepartmentResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.exception.GlobalExceptionHandler;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
@@ -47,8 +51,11 @@ class DepartmentSecurityTest {
         service = context.getBean(IDepartmentService.class);
         accounts = context.getBean(IAccountRepository.class);
         decoder = context.getBean(JwtDecoder.class);
-        when(service.getDepartments(any())).thenReturn(Page.empty());
-        mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        when(service.getDepartments(any(DepartmentSearchRequest.class), any(Pageable.class)))
+                .thenReturn(Page.empty());
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .defaultRequest(get("/api/v1/").contextPath("/api/v1"))
+                .apply(springSecurity()).build();
     }
 
     @AfterEach
@@ -88,10 +95,11 @@ class DepartmentSecurityTest {
     void listBindsQueryFiltersAndReturnsArrayWithTotal() throws Exception {
         stubToken(EN_AccountType.ADMIN);
         DepartmentResponse department = response();
-        when(service.getDepartments(any())).thenReturn(new PageImpl<>(List.of(department),
+        when(service.getDepartments(any(DepartmentSearchRequest.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(department),
                 PageRequest.of(0, 10), 16));
         mvc.perform(get("/api/v1/departments").header("Authorization", "Bearer ADMIN")
-                        .param("page", "0").param("size", "10").param("search", "Engineering")
+                        .param("pageNumber", "2").param("size", "10").param("search", "Engineering")
                         .param("type", "DEV").param("status", "ACTIVE")
                         .param("minCreatedDate", "2026-10-01").param("maxCreatedDate", "2026-10-29"))
                 .andExpect(status().isOk())
@@ -99,7 +107,10 @@ class DepartmentSecurityTest {
                 .andExpect(jsonPath("$.data[0].id").value(10))
                 .andExpect(jsonPath("$.data2nd").value(16));
         var request = ArgumentCaptor.forClass(DepartmentSearchRequest.class);
-        verify(service).getDepartments(request.capture());
+        var paging = ArgumentCaptor.forClass(Pageable.class);
+        verify(service).getDepartments(request.capture(), paging.capture());
+        assertEquals(1, paging.getValue().getPageNumber());
+        assertEquals(10, paging.getValue().getPageSize());
         assertEquals("Engineering", request.getValue().getSearch());
         assertEquals("DEV", request.getValue().getType());
         assertEquals(EN_Status.ACTIVE, request.getValue().getStatus());
@@ -144,9 +155,17 @@ class DepartmentSecurityTest {
         mvc.perform(patch("/api/v1/departments/updateStatusList").header("Authorization", "Bearer ADMIN")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"ids\":[],\"status\":\"DELETED\"}"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/v1/departments?size=0").header("Authorization", "Bearer ADMIN"))
-                .andExpect(status().isBadRequest());
         verifyNoInteractions(service);
+    }
+
+    @Test
+    void nonPositivePageSizeFallsBackToDefault() throws Exception {
+        stubToken(EN_AccountType.ADMIN);
+        mvc.perform(get("/api/v1/departments?size=0").header("Authorization", "Bearer ADMIN"))
+                .andExpect(status().isOk());
+        var paging = ArgumentCaptor.forClass(Pageable.class);
+        verify(service).getDepartments(any(DepartmentSearchRequest.class), paging.capture());
+        assertEquals(10, paging.getValue().getPageSize());
     }
 
     private DepartmentResponse response() {
@@ -172,7 +191,18 @@ class DepartmentSecurityTest {
     @EnableWebMvc
     @EnableWebSecurity
     @Import({SecurityConfig.class, DepartmentController.class, GlobalExceptionHandler.class})
-    static class TestConfig {
+    static class TestConfig implements WebMvcConfigurer {
+        @Override
+        public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+            var pageable = new PageableHandlerMethodArgumentResolver();
+            pageable.setPageParameterName("pageNumber");
+            pageable.setSizeParameterName("size");
+            pageable.setOneIndexedParameters(true);
+            pageable.setFallbackPageable(PageRequest.of(0, 10));
+            pageable.setMaxPageSize(100);
+            resolvers.add(pageable);
+        }
+
         @Bean IAccountRepository accountRepository() { return mock(IAccountRepository.class); }
         @Bean IDepartmentService departmentService() { return mock(IDepartmentService.class); }
         @Bean JwtDecoder jwtDecoder() { return mock(JwtDecoder.class); }

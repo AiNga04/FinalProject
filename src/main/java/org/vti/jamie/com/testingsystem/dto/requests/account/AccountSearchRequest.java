@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests;
+package org.vti.jamie.com.testingsystem.dto.requests.account;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;

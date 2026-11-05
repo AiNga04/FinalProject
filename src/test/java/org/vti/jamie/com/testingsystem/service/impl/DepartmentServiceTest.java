@@ -7,7 +7,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.vti.jamie.com.testingsystem.config.ModelMapperConfig;
-import org.vti.jamie.com.testingsystem.dto.requests.*;
+import org.vti.jamie.com.testingsystem.mapper.DepartmentMapper;
+import org.vti.jamie.com.testingsystem.dto.requests.department.CreateDepartmentRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.department.DepartmentSearchRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.department.UpdateDepartmentRequest;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.entity.Department;
 import org.vti.jamie.com.testingsystem.exception.*;
@@ -30,7 +33,7 @@ class DepartmentServiceTest {
     void setUp() {
         departments = mock(IDepartmentRepository.class);
         accounts = mock(IAccountRepository.class);
-        service = new DepartmentService(departments, accounts, new ModelMapperConfig().modelMapper());
+        service = new DepartmentService(departments, accounts, new DepartmentMapper(new ModelMapperConfig().modelMapper()));
     }
 
     @Test
@@ -115,6 +118,21 @@ class DepartmentServiceTest {
     }
 
     @Test
+    void typeOnlyUpdateNormalizesValueAndKeepsDepartmentName() {
+        Department department = department(10L, EN_Status.ACTIVE);
+        when(departments.findById(10L)).thenReturn(Optional.of(department));
+        when(departments.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
+        UpdateDepartmentRequest request = new UpdateDepartmentRequest();
+        request.setType(" HR ");
+
+        var response = service.update(10L, request, "3");
+
+        assertEquals("Engineering", response.getName());
+        assertEquals("HR", response.getType());
+        verify(departments, never()).existsByNameAndIdNot(anyString(), anyLong());
+    }
+
+    @Test
     void deletedDepartmentMustBeRestoredBeforeEditing() {
         when(departments.findById(10L)).thenReturn(Optional.of(department(10L, EN_Status.DELETED)));
         assertThrows(ResourceConflictException.class,
@@ -150,6 +168,35 @@ class DepartmentServiceTest {
     }
 
     @Test
+    void deletingSameDepartmentTwiceRejectsSecondRequestWithoutChangingAudit() {
+        Department department = department(10L, EN_Status.ACTIVE);
+        when(departments.findAllById(Set.of(10L))).thenReturn(List.of(department));
+        when(departments.saveAllAndFlush(any())).thenReturn(List.of(department));
+
+        service.updateStatus(10L, EN_Status.DELETED, "3");
+        assertThrows(ResourceConflictException.class,
+                () -> service.updateStatus(10L, EN_Status.DELETED, "4"));
+
+        assertEquals(3L, department.getUpdatedBy());
+        verify(departments, times(1)).saveAllAndFlush(any());
+    }
+
+    @Test
+    void bulkDeleteRejectsAlreadyDeletedDepartmentBeforeChangingAnyDepartment() {
+        Department active = department(10L, EN_Status.ACTIVE);
+        Department deleted = department(11L, EN_Status.DELETED);
+        when(departments.findAllById(Set.of(10L, 11L))).thenReturn(List.of(active, deleted));
+
+        assertThrows(ResourceConflictException.class,
+                () -> service.updateStatusList(List.of(10L, 11L), EN_Status.DELETED, "3"));
+
+        assertEquals(EN_Status.ACTIVE, active.getStatus());
+        assertNull(active.getUpdatedBy());
+        verify(departments, never()).saveAllAndFlush(any());
+        verifyNoInteractions(accounts);
+    }
+
+    @Test
     void batchRejectsMissingIdBeforeChangingAnyDepartment() {
         Department department = department(10L, EN_Status.ACTIVE);
         when(departments.findAllById(Set.of(10L, 11L))).thenReturn(List.of(department));
@@ -173,7 +220,7 @@ class DepartmentServiceTest {
         when(accounts.countMembersByDepartmentIds(List.of(10L, 11L), EN_Status.DELETED))
                 .thenReturn(List.of(count));
 
-        var page = service.getDepartments(new DepartmentSearchRequest());
+        var page = service.getDepartments(new DepartmentSearchRequest(), PageRequest.of(0, 10));
 
         assertEquals(16, page.getTotalElements());
         assertEquals(4, page.getContent().get(0).getTotalMember());
@@ -187,7 +234,8 @@ class DepartmentServiceTest {
         DepartmentSearchRequest request = new DepartmentSearchRequest();
         request.setMinCreatedDate(LocalDate.of(2026, 10, 29));
         request.setMaxCreatedDate(LocalDate.of(2026, 10, 1));
-        assertThrows(IllegalArgumentException.class, () -> service.getDepartments(request));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.getDepartments(request, PageRequest.of(0, 10)));
         verifyNoInteractions(departments, accounts);
     }
 
@@ -211,7 +259,7 @@ class DepartmentServiceTest {
     private CreateDepartmentRequest createRequest() {
         CreateDepartmentRequest request = new CreateDepartmentRequest();
         request.setName(" Engineering ");
-        request.setType("DEV");
+        request.setType(" DEV ");
         return request;
     }
 }

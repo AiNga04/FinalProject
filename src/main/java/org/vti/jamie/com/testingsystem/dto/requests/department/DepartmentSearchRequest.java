@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests;
+package org.vti.jamie.com.testingsystem.dto.requests.department;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -11,12 +11,6 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class DepartmentSearchRequest {
-    @Min(0)
-    private int page = 0;
-
-    @Min(1) @Max(100)
-    private int size = 10;
-
     @Size(max = 100)
     private String search;
 

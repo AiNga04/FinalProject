@@ -7,22 +7,23 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.vti.jamie.com.testingsystem.dto.requests.*;
+import org.vti.jamie.com.testingsystem.dto.requests.department.*;
 import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
-import org.vti.jamie.com.testingsystem.dto.responses.DepartmentResponse;
+import org.vti.jamie.com.testingsystem.dto.responses.department.DepartmentResponse;
 import org.vti.jamie.com.testingsystem.service.IDepartmentService;
 
 import java.util.List;
 
 @Validated
 @RestController
-@RequestMapping("/api/v1/departments")
+@RequestMapping("/departments")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class DepartmentController {
@@ -31,8 +32,9 @@ public class DepartmentController {
     @GetMapping
     @Operation(summary = "ADMIN: danh sách phòng ban, tìm kiếm, lọc và phân trang")
     public ResponseEntity<ApiResponse<List<DepartmentResponse>>> list(
-            @Valid @ParameterObject @ModelAttribute DepartmentSearchRequest request) {
-        Page<DepartmentResponse> page = departmentService.getDepartments(request);
+            @Valid @ParameterObject @ModelAttribute DepartmentSearchRequest request,
+            @ParameterObject Pageable pageable) {
+        Page<DepartmentResponse> page = departmentService.getDepartments(request, pageable);
         return ResponseEntity.ok(ApiResponse.success(200, "Lấy danh sách phòng ban thành công",
                 page.getContent(), page.getTotalElements()));
     }

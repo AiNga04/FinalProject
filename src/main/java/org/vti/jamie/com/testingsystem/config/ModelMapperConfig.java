@@ -2,10 +2,10 @@ package org.vti.jamie.com.testingsystem.config;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.Conditions;
-import org.vti.jamie.com.testingsystem.dto.requests.UpdateAccountRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.account.UpdateAccountRequest;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.entity.Department;
-import org.vti.jamie.com.testingsystem.dto.requests.UpdateDepartmentRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.department.UpdateDepartmentRequest;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

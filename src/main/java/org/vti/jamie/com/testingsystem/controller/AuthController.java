@@ -9,15 +9,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.vti.jamie.com.testingsystem.dto.requests.LoginRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.RefreshTokenRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.auth.LoginRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.auth.RefreshTokenRequest;
 import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
-import org.vti.jamie.com.testingsystem.dto.responses.LoginResponse;
+import org.vti.jamie.com.testingsystem.dto.responses.auth.LoginResponse;
 import org.vti.jamie.com.testingsystem.service.IAuthService;
 
 @Validated
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final IAuthService authService;

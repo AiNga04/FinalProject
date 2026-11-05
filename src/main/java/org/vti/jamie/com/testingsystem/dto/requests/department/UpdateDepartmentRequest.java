@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests;
+package org.vti.jamie.com.testingsystem.dto.requests.department;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;

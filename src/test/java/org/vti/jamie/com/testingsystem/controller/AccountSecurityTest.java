@@ -6,6 +6,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,7 +21,15 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.vti.jamie.com.testingsystem.config.SecurityConfig;
-import org.vti.jamie.com.testingsystem.dto.responses.AccountResponse;
+import org.vti.jamie.com.testingsystem.dto.requests.account.AccountSearchRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.account.CreateAccountRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.account.UpdateAccountRequest;
+import org.vti.jamie.com.testingsystem.dto.responses.account.AccountResponse;
+import org.vti.jamie.com.testingsystem.dto.requests.auth.LoginRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.auth.RefreshTokenRequest;
+import org.vti.jamie.com.testingsystem.dto.responses.auth.LoginResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.exception.GlobalExceptionHandler;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 import org.vti.jamie.com.testingsystem.repository.IRevokedSessionRepository;
@@ -48,14 +61,68 @@ class AccountSecurityTest {
         context.refresh();
         decoder = context.getBean(JwtDecoder.class);
         service = context.getBean(IAccountService.class);
-        when(service.getAccounts(any())).thenReturn(org.springframework.data.domain.Page.empty());
+        when(service.getAccounts(
+                any(AccountSearchRequest.class),
+                any(Pageable.class)
+        )).thenReturn(org.springframework.data.domain.Page.empty());
         repository = context.getBean(IAccountRepository.class);
-        mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .defaultRequest(get("/api/v1/").contextPath("/api/v1"))
+                .apply(springSecurity()).build();
     }
 
     @AfterEach
     void tearDown() {
         context.close();
+    }
+
+    @Test
+    void loginIsPublicUnderApiContextPath() throws Exception {
+        var auth = context.getBean(IAuthService.class);
+        var request = new LoginRequest("admin", "test-password");
+        when(auth.login(request)).thenReturn(new LoginResponse("access", "refresh"));
+
+        mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"test-password\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value(1))
+                .andExpect(jsonPath("$.data.accessToken").value("access"))
+                .andExpect(jsonPath("$.data.refreshToken").value("refresh"));
+        verify(auth).login(request);
+        verifyNoInteractions(decoder);
+    }
+
+    @Test
+    void refreshIsPublicUnderApiContextPath() throws Exception {
+        var auth = context.getBean(IAuthService.class);
+        var request = new RefreshTokenRequest("old-refresh");
+        when(auth.refresh(request)).thenReturn(new LoginResponse("new-access", "new-refresh"));
+
+        mvc.perform(post("/api/v1/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"old-refresh\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").value("new-access"))
+                .andExpect(jsonPath("$.data.refreshToken").value("new-refresh"));
+        verify(auth).refresh(request);
+        verifyNoInteractions(decoder);
+    }
+
+    @Test
+    void wrongPasswordReturnsApplicationErrorRatherThanSecurityRejection() throws Exception {
+        var auth = context.getBean(IAuthService.class);
+        var request = new LoginRequest("admin", "wrong-password");
+        when(auth.login(request)).thenThrow(new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED, "Username hoặc password không chính xác"));
+
+        mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"wrong-password\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.result").value(0))
+                .andExpect(jsonPath("$.error.code").value(401));
+        verify(auth).login(request);
     }
 
     @Test
@@ -119,7 +186,19 @@ class AccountSecurityTest {
     @EnableWebMvc
     @EnableWebSecurity
     @Import({SecurityConfig.class, AccountController.class, AuthController.class, GlobalExceptionHandler.class})
-    static class TestConfig {
+    static class TestConfig implements WebMvcConfigurer {
+        @Override
+        public void addArgumentResolvers(java.util.List<HandlerMethodArgumentResolver> resolvers) {
+            // This manually created MVC context does not load Spring Boot's YAML configuration.
+            var pageable = new PageableHandlerMethodArgumentResolver();
+            pageable.setPageParameterName("pageNumber");
+            pageable.setSizeParameterName("size");
+            pageable.setOneIndexedParameters(true);
+            pageable.setFallbackPageable(PageRequest.of(0, 10));
+            pageable.setMaxPageSize(100);
+            resolvers.add(pageable);
+        }
+
         @Bean IAccountRepository accountRepository() { return mock(IAccountRepository.class); }
         @Bean IAccountService accountService() { return mock(IAccountService.class); }
         @Bean JwtDecoder jwtDecoder() { return mock(JwtDecoder.class); }
@@ -204,12 +283,37 @@ class AccountSecurityTest {
     }
 
     @Test
-    void invalidPagingReturnsBadRequest() throws Exception {
+    void nonPositivePageSizeFallsBackToDefault() throws Exception {
         stubToken("ADMIN");
         mvc.perform(get("/api/v1/accounts?size=0")
                         .header("Authorization", "Bearer ADMIN"))
-                .andExpect(status().isBadRequest());
-        verifyNoInteractions(service);
+                .andExpect(status().isOk());
+        var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(service).getAccounts(any(AccountSearchRequest.class), paging.capture());
+        org.junit.jupiter.api.Assertions.assertEquals(10, paging.getValue().getPageSize());
+    }
+
+    @Test
+    void missingPagingUsesFirstPageAndDefaultSize() throws Exception {
+        stubToken("ADMIN");
+        mvc.perform(get("/api/v1/accounts").header("Authorization", "Bearer ADMIN"))
+                .andExpect(status().isOk());
+        var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(service).getAccounts(any(AccountSearchRequest.class), paging.capture());
+        org.junit.jupiter.api.Assertions.assertEquals(0, paging.getValue().getPageNumber());
+        org.junit.jupiter.api.Assertions.assertEquals(10, paging.getValue().getPageSize());
+    }
+
+    @Test
+    void firstPageIsOneIndexedAndSizeIsCapped() throws Exception {
+        stubToken("ADMIN");
+        mvc.perform(get("/api/v1/accounts?pageNumber=1&size=101")
+                        .header("Authorization", "Bearer ADMIN"))
+                .andExpect(status().isOk());
+        var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(service).getAccounts(any(AccountSearchRequest.class), paging.capture());
+        org.junit.jupiter.api.Assertions.assertEquals(0, paging.getValue().getPageNumber());
+        org.junit.jupiter.api.Assertions.assertEquals(100, paging.getValue().getPageSize());
     }
 
     @Test
@@ -240,7 +344,7 @@ class AccountSecurityTest {
                                 + "\"password\":\"test-password\",\"firstName\":\"Test\",\"lastName\":\"User\"}"))
                 .andExpect(status().isCreated());
         var request = org.mockito.ArgumentCaptor.forClass(
-                org.vti.jamie.com.testingsystem.dto.requests.CreateAccountRequest.class);
+                CreateAccountRequest.class);
         verify(service).create(request.capture(), eq("3"));
         org.junit.jupiter.api.Assertions.assertEquals(EN_AccountType.EMPLOYEE,
                 request.getValue().getAccountType());
@@ -257,7 +361,7 @@ class AccountSecurityTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"departmentId\":null}"))
                 .andExpect(status().isOk());
         var request = org.mockito.ArgumentCaptor.forClass(
-                org.vti.jamie.com.testingsystem.dto.requests.UpdateAccountRequest.class);
+                UpdateAccountRequest.class);
         verify(service, times(2)).update(eq(7L), request.capture(), eq("3"));
         org.junit.jupiter.api.Assertions.assertFalse(request.getAllValues().get(0).isDepartmentIdPresent());
         org.junit.jupiter.api.Assertions.assertTrue(request.getAllValues().get(1).isDepartmentIdPresent());
@@ -280,16 +384,17 @@ class AccountSecurityTest {
         stubToken("ADMIN");
         mvc.perform(get("/api/v1/accounts")
                         .header("Authorization", "Bearer ADMIN")
-                        .param("page", "1").param("size", "20")
+                        .param("pageNumber", "2").param("size", "20")
                         .param("search", "Nga").param("accountType", "EMPLOYEE")
                         .param("departmentId", "7").param("status", "ACTIVE"))
                 .andExpect(status().isOk());
         var request = org.mockito.ArgumentCaptor.forClass(
-                org.vti.jamie.com.testingsystem.dto.requests.AccountSearchRequest.class);
-        verify(service).getAccounts(request.capture());
+                AccountSearchRequest.class);
+        var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(service).getAccounts(request.capture(), paging.capture());
         var filters = request.getValue();
-        org.junit.jupiter.api.Assertions.assertEquals(1, filters.getPage());
-        org.junit.jupiter.api.Assertions.assertEquals(20, filters.getSize());
+        org.junit.jupiter.api.Assertions.assertEquals(1, paging.getValue().getPageNumber());
+        org.junit.jupiter.api.Assertions.assertEquals(20, paging.getValue().getPageSize());
         org.junit.jupiter.api.Assertions.assertEquals("Nga", filters.getSearch());
         org.junit.jupiter.api.Assertions.assertEquals(EN_AccountType.EMPLOYEE, filters.getAccountType());
         org.junit.jupiter.api.Assertions.assertEquals(7L, filters.getDepartmentId());
@@ -302,7 +407,8 @@ class AccountSecurityTest {
         AccountResponse account = new AccountResponse();
         account.setId(7L);
         account.setUsername("employee01");
-        when(service.getAccounts(any())).thenReturn(new org.springframework.data.domain.PageImpl<>(
+        when(service.getAccounts(any(AccountSearchRequest.class), any(Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(
                 java.util.List.of(account), org.springframework.data.domain.PageRequest.of(0, 10), 16));
 
         mvc.perform(get("/api/v1/accounts").header("Authorization", "Bearer ADMIN"))
@@ -318,13 +424,19 @@ class AccountSecurityTest {
     @Test
     void emptyPageReturnsEmptyArrayAndStillPreservesFilteredTotal() throws Exception {
         stubToken("ADMIN");
-        when(service.getAccounts(any())).thenReturn(new org.springframework.data.domain.PageImpl<>(
+        when(service.getAccounts(
+                any(AccountSearchRequest.class),
+                any(Pageable.class)
+        )).thenReturn(new org.springframework.data.domain.PageImpl<>(
                 java.util.List.of(), org.springframework.data.domain.PageRequest.of(2, 10), 16));
 
-        mvc.perform(get("/api/v1/accounts?page=2").header("Authorization", "Bearer ADMIN"))
+        mvc.perform(get("/api/v1/accounts?pageNumber=3").header("Authorization", "Bearer ADMIN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isEmpty())
                 .andExpect(jsonPath("$.data2nd").value(16));
+        var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(service).getAccounts(any(AccountSearchRequest.class), paging.capture());
+        org.junit.jupiter.api.Assertions.assertEquals(2, paging.getValue().getPageNumber());
     }
 
     @Test

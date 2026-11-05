@@ -7,8 +7,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.server.ResponseStatusException;
-import org.vti.jamie.com.testingsystem.dto.requests.RefreshTokenRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.LoginResponse;
+import org.vti.jamie.com.testingsystem.dto.requests.auth.RefreshTokenRequest;
+import org.vti.jamie.com.testingsystem.dto.responses.auth.LoginResponse;
 import org.vti.jamie.com.testingsystem.exception.GlobalExceptionHandler;
 import org.vti.jamie.com.testingsystem.service.IAuthService;
 
@@ -24,6 +24,7 @@ class AuthControllerTest {
     void setUp() {
         service = mock(IAuthService.class);
         mvc = MockMvcBuilders.standaloneSetup(new AuthController(service))
+                .defaultRequest(post("/api/v1/").contextPath("/api/v1"))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
     }
 

@@ -5,8 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.vti.jamie.com.testingsystem.config.ModelMapperConfig;
-import org.vti.jamie.com.testingsystem.dto.requests.CreateAccountRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.UpdateAccountRequest;
+import org.vti.jamie.com.testingsystem.mapper.AccountMapper;
+import org.vti.jamie.com.testingsystem.dto.requests.account.CreateAccountRequest;
+import org.vti.jamie.com.testingsystem.dto.requests.account.UpdateAccountRequest;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.exception.DuplicateResourceException;
 import org.vti.jamie.com.testingsystem.exception.ResourceConflictException;
@@ -35,7 +36,7 @@ class AccountCrudTest {
         repository = mock(IAccountRepository.class);
         refreshTokens = mock(IRefreshTokenRepository.class);
         encoder = new BCryptPasswordEncoder();
-        service = new AccountService(repository, new ModelMapperConfig().modelMapper(), encoder, refreshTokens);
+        service = new AccountService(repository, new AccountMapper(new ModelMapperConfig().modelMapper()), encoder, refreshTokens);
     }
 
     @Test
@@ -48,6 +49,18 @@ class AccountCrudTest {
         assertEquals(EN_Status.ACTIVE, response.getStatus());
         assertEquals(3L, saved.getValue().getCreatedBy());
         assertEquals("new-user", response.getUsername());
+    }
+
+    @Test
+    void createChecksUniqueUsernameAfterRemovingSurroundingWhitespace() {
+        var request = createRequest();
+        request.setUsername("  new-user  ");
+        when(repository.existsByUsername("new-user")).thenReturn(true);
+
+        assertThrows(DuplicateResourceException.class, () -> service.create(request, "3"));
+
+        verify(repository).existsByUsername("new-user");
+        verify(repository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -143,9 +156,42 @@ class AccountCrudTest {
     }
 
     @Test
+    void deletingSameAccountTwiceRejectsSecondRequestWithoutRevokingTokensAgain() {
+        Account account = account(7L, EN_Status.ACTIVE);
+        when(repository.findAllById(Set.of(7L))).thenReturn(List.of(account));
+        when(repository.saveAllAndFlush(any())).thenReturn(List.of(account));
+
+        service.updateStatus(7L, EN_Status.DELETED, "3");
+        assertThrows(ResourceConflictException.class,
+                () -> service.updateStatus(7L, EN_Status.DELETED, "4"));
+
+        assertEquals(1, account.getTokenVersion());
+        assertEquals(3L, account.getUpdatedBy());
+        verify(repository, times(1)).saveAllAndFlush(any());
+        verify(refreshTokens, times(1)).revokeByAccountIds(eq(Set.of(7L)), any());
+    }
+
+    @Test
+    void bulkDeleteRejectsAlreadyDeletedAccountBeforeChangingAnyAccount() {
+        Account active = account(7L, EN_Status.ACTIVE);
+        Account deleted = account(8L, EN_Status.DELETED);
+        when(repository.findAllById(Set.of(7L, 8L))).thenReturn(List.of(active, deleted));
+
+        assertThrows(ResourceConflictException.class,
+                () -> service.updateStatusList(List.of(7L, 8L), EN_Status.DELETED, "3"));
+
+        assertEquals(EN_Status.ACTIVE, active.getStatus());
+        assertEquals(0, active.getTokenVersion());
+        assertNull(active.getUpdatedBy());
+        verify(repository, never()).saveAllAndFlush(any());
+        verifyNoInteractions(refreshTokens);
+    }
+
+    @Test
     void statusListAppliesEachSupportedStatusToAllAccounts() {
         for (EN_Status status : EN_Status.values()) {
-            Account first = account(7L, EN_Status.DELETED);
+            Account first = account(7L, status == EN_Status.DELETED
+                    ? EN_Status.INACTIVE : EN_Status.DELETED);
             Account second = account(8L, EN_Status.ACTIVE);
             when(repository.findAllById(Set.of(7L, 8L))).thenReturn(List.of(first, second));
             when(repository.saveAllAndFlush(any())).thenReturn(List.of(first, second));
@@ -209,6 +255,27 @@ class AccountCrudTest {
         assertEquals(0, account.getTokenVersion());
         verifyNoInteractions(refreshTokens);
         verify(repository, never()).countActiveDepartment(any());
+    }
+
+    @Test
+    void whitespaceOnlyIdentityChangesDoNotInvalidateSessions() {
+        Account account = account(7L, EN_Status.ACTIVE);
+        when(repository.findById(7L)).thenReturn(Optional.of(account));
+        when(repository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
+        UpdateAccountRequest request = new UpdateAccountRequest();
+        request.setUsername(" new-user ");
+        request.setEmail(" user@example.com ");
+        request.setLastName(" Updated ");
+
+        var response = service.update(7L, request, "3");
+
+        assertEquals("new-user", response.getUsername());
+        assertEquals("user@example.com", response.getEmail());
+        assertEquals("Updated", response.getLastName());
+        assertEquals(0, account.getTokenVersion());
+        verify(repository).existsByUsernameAndIdNot("new-user", 7L);
+        verify(repository).existsByEmailAndIdNot("user@example.com", 7L);
+        verifyNoInteractions(refreshTokens);
     }
 
     @Test

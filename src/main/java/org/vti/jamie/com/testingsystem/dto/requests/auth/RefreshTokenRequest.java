@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests;
+package org.vti.jamie.com.testingsystem.dto.requests.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

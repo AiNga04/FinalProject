@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.config.ModelMapperConfig;
+import org.vti.jamie.com.testingsystem.mapper.AccountMapper;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 import org.vti.jamie.com.testingsystem.repository.IRefreshTokenRepository;
@@ -25,7 +26,7 @@ class AccountServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(IAccountRepository.class);
-        service = new AccountService(repository, new ModelMapperConfig().modelMapper(),
+        service = new AccountService(repository, new AccountMapper(new ModelMapperConfig().modelMapper()),
                 new BCryptPasswordEncoder(), mock(IRefreshTokenRepository.class));
     }
 
