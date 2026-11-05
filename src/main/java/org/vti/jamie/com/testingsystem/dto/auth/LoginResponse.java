@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.responses.auth;
+package org.vti.jamie.com.testingsystem.dto.auth;
 
 public record LoginResponse(
         String accessToken,

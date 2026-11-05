@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests.department;
+package org.vti.jamie.com.testingsystem.form.department;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class UpdateDepartmentRequest {
+public class UpdateDepartmentForm {
     @JsonSetter(nulls = Nulls.FAIL)
     @Pattern(regexp = "(?sU).*\\S.*", message = "Tên phòng ban không được để trống")
     @Size(max = 50)

@@ -16,9 +16,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.vti.jamie.com.testingsystem.config.SecurityConfig;
-import org.vti.jamie.com.testingsystem.dto.requests.department.DepartmentSearchRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.department.UpdateDepartmentRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.department.DepartmentResponse;
+import org.vti.jamie.com.testingsystem.form.department.DepartmentSearchForm;
+import org.vti.jamie.com.testingsystem.form.department.UpdateDepartmentForm;
+import org.vti.jamie.com.testingsystem.dto.department.DepartmentResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.exception.GlobalExceptionHandler;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
@@ -51,7 +51,7 @@ class DepartmentSecurityTest {
         service = context.getBean(IDepartmentService.class);
         accounts = context.getBean(IAccountRepository.class);
         decoder = context.getBean(JwtDecoder.class);
-        when(service.getDepartments(any(DepartmentSearchRequest.class), any(Pageable.class)))
+        when(service.getDepartments(any(DepartmentSearchForm.class), any(Pageable.class)))
                 .thenReturn(Page.empty());
         mvc = MockMvcBuilders.webAppContextSetup(context)
                 .defaultRequest(get("/api/v1/").contextPath("/api/v1"))
@@ -95,7 +95,7 @@ class DepartmentSecurityTest {
     void listBindsQueryFiltersAndReturnsArrayWithTotal() throws Exception {
         stubToken(EN_AccountType.ADMIN);
         DepartmentResponse department = response();
-        when(service.getDepartments(any(DepartmentSearchRequest.class), any(Pageable.class)))
+        when(service.getDepartments(any(DepartmentSearchForm.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(department),
                 PageRequest.of(0, 10), 16));
         mvc.perform(get("/api/v1/departments").header("Authorization", "Bearer ADMIN")
@@ -106,7 +106,7 @@ class DepartmentSecurityTest {
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data[0].id").value(10))
                 .andExpect(jsonPath("$.data2nd").value(16));
-        var request = ArgumentCaptor.forClass(DepartmentSearchRequest.class);
+        var request = ArgumentCaptor.forClass(DepartmentSearchForm.class);
         var paging = ArgumentCaptor.forClass(Pageable.class);
         verify(service).getDepartments(request.capture(), paging.capture());
         assertEquals(1, paging.getValue().getPageNumber());
@@ -134,7 +134,7 @@ class DepartmentSecurityTest {
         mvc.perform(put("/api/v1/departments/10").header("Authorization", "Bearer ADMIN")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"New name\"}"))
                 .andExpect(status().isOk());
-        var request = ArgumentCaptor.forClass(UpdateDepartmentRequest.class);
+        var request = ArgumentCaptor.forClass(UpdateDepartmentForm.class);
         verify(service).update(eq(10L), request.capture(), eq("3"));
         assertEquals("New name", request.getValue().getName());
         assertNull(request.getValue().getType());
@@ -164,7 +164,7 @@ class DepartmentSecurityTest {
         mvc.perform(get("/api/v1/departments?size=0").header("Authorization", "Bearer ADMIN"))
                 .andExpect(status().isOk());
         var paging = ArgumentCaptor.forClass(Pageable.class);
-        verify(service).getDepartments(any(DepartmentSearchRequest.class), paging.capture());
+        verify(service).getDepartments(any(DepartmentSearchForm.class), paging.capture());
         assertEquals(10, paging.getValue().getPageSize());
     }
 

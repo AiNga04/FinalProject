@@ -1,9 +1,9 @@
-package org.vti.jamie.com.testingsystem.dto.requests.account;
+package org.vti.jamie.com.testingsystem.form.department;
 
 import jakarta.validation.constraints.NotNull;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
-public record UpdateAccountStatusRequest(
+public record UpdateDepartmentStatusForm(
         @NotNull(message = "Status không được để trống") EN_Status status
 ) {
 }

@@ -7,10 +7,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.vti.jamie.com.testingsystem.dto.requests.department.CreateDepartmentRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.department.DepartmentSearchRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.department.UpdateDepartmentRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.department.DepartmentResponse;
+import org.vti.jamie.com.testingsystem.form.department.CreateDepartmentForm;
+import org.vti.jamie.com.testingsystem.form.department.DepartmentSearchForm;
+import org.vti.jamie.com.testingsystem.form.department.UpdateDepartmentForm;
+import org.vti.jamie.com.testingsystem.dto.department.DepartmentResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.entity.Department;
 import org.vti.jamie.com.testingsystem.exception.DuplicateResourceException;
@@ -34,7 +34,7 @@ public class DepartmentService implements IDepartmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DepartmentResponse> getDepartments(DepartmentSearchRequest request, Pageable pageable) {
+    public Page<DepartmentResponse> getDepartments(DepartmentSearchForm request, Pageable pageable) {
         if (request.getMinCreatedDate() != null && request.getMaxCreatedDate() != null
                 && request.getMinCreatedDate().isAfter(request.getMaxCreatedDate())) {
             throw new IllegalArgumentException("Ngày tạo tối thiểu không được sau ngày tạo tối đa");
@@ -57,7 +57,7 @@ public class DepartmentService implements IDepartmentService {
 
     @Override
     @Transactional
-    public DepartmentResponse create(CreateDepartmentRequest request, String subject) {
+    public DepartmentResponse create(CreateDepartmentForm request, String subject) {
         Department department = departmentMapper.toEntity(request);
         if (departmentRepository.existsByName(department.getName())) {
             throw new DuplicateResourceException("Tên phòng ban đã tồn tại, kể cả trong phòng ban đã xóa");
@@ -79,7 +79,7 @@ public class DepartmentService implements IDepartmentService {
 
     @Override
     @Transactional
-    public DepartmentResponse update(Long id, UpdateDepartmentRequest request, String subject) {
+    public DepartmentResponse update(Long id, UpdateDepartmentForm request, String subject) {
         Department department = requireDepartment(id);
         if (department.getStatus() == EN_Status.DELETED) {
             throw new ResourceConflictException("Hãy khôi phục phòng ban trước khi cập nhật thông tin");

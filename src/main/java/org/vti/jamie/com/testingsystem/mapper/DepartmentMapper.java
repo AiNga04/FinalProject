@@ -3,9 +3,9 @@ package org.vti.jamie.com.testingsystem.mapper;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
-import org.vti.jamie.com.testingsystem.dto.requests.department.CreateDepartmentRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.department.UpdateDepartmentRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.department.DepartmentResponse;
+import org.vti.jamie.com.testingsystem.form.department.CreateDepartmentForm;
+import org.vti.jamie.com.testingsystem.form.department.UpdateDepartmentForm;
+import org.vti.jamie.com.testingsystem.dto.department.DepartmentResponse;
 import org.vti.jamie.com.testingsystem.entity.Department;
 
 @Component
@@ -14,7 +14,7 @@ public class DepartmentMapper {
 
     private final ModelMapper modelMapper;
 
-    public Department toEntity(CreateDepartmentRequest request) {
+    public Department toEntity(CreateDepartmentForm request) {
         Department department = modelMapper.map(request, Department.class);
         department.setName(request.getName().strip());
         department.setType(request.getType().strip());
@@ -22,7 +22,7 @@ public class DepartmentMapper {
     }
 
     public void updateEntity(
-            UpdateDepartmentRequest request,
+            UpdateDepartmentForm request,
             Department department) {
 
         modelMapper.map(request, department);

@@ -15,9 +15,9 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.LoginRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.RefreshTokenRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.auth.LoginResponse;
+import org.vti.jamie.com.testingsystem.form.auth.LoginForm;
+import org.vti.jamie.com.testingsystem.form.auth.RefreshTokenForm;
+import org.vti.jamie.com.testingsystem.dto.auth.LoginResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 import org.vti.jamie.com.testingsystem.service.IAuthService;
@@ -43,7 +43,7 @@ public class AuthService implements IAuthService {
 
     @Override
     @Transactional
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginForm request) {
 
         // 1. Kiểm tra username và password
         try {
@@ -81,7 +81,7 @@ public class AuthService implements IAuthService {
 
     @Override
     @Transactional
-    public LoginResponse refresh(RefreshTokenRequest request) {
+    public LoginResponse refresh(RefreshTokenForm request) {
         var refreshToken = refreshTokenService.consume(request.refreshToken());
         return issueTokens(refreshToken.getAccount(), refreshToken.getSessionId());
     }

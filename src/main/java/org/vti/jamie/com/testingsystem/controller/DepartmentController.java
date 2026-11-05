@@ -14,9 +14,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.vti.jamie.com.testingsystem.dto.requests.department.*;
-import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
-import org.vti.jamie.com.testingsystem.dto.responses.department.DepartmentResponse;
+import org.vti.jamie.com.testingsystem.form.department.*;
+import org.vti.jamie.com.testingsystem.dto.ApiResponse;
+import org.vti.jamie.com.testingsystem.dto.department.DepartmentResponse;
 import org.vti.jamie.com.testingsystem.service.IDepartmentService;
 
 import java.util.List;
@@ -32,7 +32,7 @@ public class DepartmentController {
     @GetMapping
     @Operation(summary = "ADMIN: danh sách phòng ban, tìm kiếm, lọc và phân trang")
     public ResponseEntity<ApiResponse<List<DepartmentResponse>>> list(
-            @Valid @ParameterObject @ModelAttribute DepartmentSearchRequest request,
+            @Valid @ParameterObject @ModelAttribute DepartmentSearchForm request,
             @ParameterObject Pageable pageable) {
         Page<DepartmentResponse> page = departmentService.getDepartments(request, pageable);
         return ResponseEntity.ok(ApiResponse.success(200, "Lấy danh sách phòng ban thành công",
@@ -49,7 +49,7 @@ public class DepartmentController {
     @PostMapping
     @Operation(summary = "ADMIN: tạo phòng ban, tùy chọn thêm tài khoản chưa thuộc phòng ban")
     public ResponseEntity<ApiResponse<DepartmentResponse>> create(
-            @Valid @RequestBody CreateDepartmentRequest request, @AuthenticationPrincipal Jwt jwt) {
+            @Valid @RequestBody CreateDepartmentForm request, @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(201,
                 "Tạo phòng ban thành công", departmentService.create(request, jwt.getSubject())));
     }
@@ -57,7 +57,7 @@ public class DepartmentController {
     @PutMapping("/{id}")
     @Operation(summary = "ADMIN: chỉ cập nhật các trường được truyền")
     public ResponseEntity<ApiResponse<DepartmentResponse>> update(
-            @PathVariable @Positive Long id, @Valid @RequestBody UpdateDepartmentRequest request,
+            @PathVariable @Positive Long id, @Valid @RequestBody UpdateDepartmentForm request,
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(200, "Cập nhật phòng ban thành công",
                 departmentService.update(id, request, jwt.getSubject())));
@@ -66,7 +66,7 @@ public class DepartmentController {
     @PatchMapping("/{id}/status")
     @Operation(summary = "ADMIN: đổi trạng thái, DELETED để xóa mềm, ACTIVE/INACTIVE để khôi phục")
     public ResponseEntity<ApiResponse<DepartmentResponse>> updateStatus(
-            @PathVariable @Positive Long id, @Valid @RequestBody UpdateDepartmentStatusRequest request,
+            @PathVariable @Positive Long id, @Valid @RequestBody UpdateDepartmentStatusForm request,
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(200, "Cập nhật trạng thái phòng ban thành công",
                 departmentService.updateStatus(id, request.status(), jwt.getSubject())));
@@ -75,7 +75,7 @@ public class DepartmentController {
     @PatchMapping("/updateStatusList")
     @Operation(summary = "ADMIN: đổi trạng thái nhiều phòng ban, DELETED là xóa mềm")
     public ResponseEntity<ApiResponse<List<DepartmentResponse>>> updateStatusList(
-            @Valid @RequestBody UpdateDepartmentStatusListRequest request,
+            @Valid @RequestBody UpdateDepartmentStatusListForm request,
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(200, "Cập nhật trạng thái các phòng ban thành công",
                 departmentService.updateStatusList(request.ids(), request.status(), jwt.getSubject())));

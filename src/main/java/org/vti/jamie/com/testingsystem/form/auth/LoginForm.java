@@ -1,8 +1,8 @@
-package org.vti.jamie.com.testingsystem.dto.requests.auth;
+package org.vti.jamie.com.testingsystem.form.auth;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record LoginRequest(
+public record LoginForm(
         @NotBlank(message = "Username không được để trống")
         String username,
 

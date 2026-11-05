@@ -7,7 +7,7 @@ import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
-import org.vti.jamie.com.testingsystem.dto.requests.department.DepartmentSearchRequest;
+import org.vti.jamie.com.testingsystem.form.department.DepartmentSearchForm;
 import org.vti.jamie.com.testingsystem.entity.Department;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
@@ -21,7 +21,7 @@ public final class DepartmentSpecification {
     }
 
     public static Specification<Department> buildWhere(
-            DepartmentSearchRequest request) {
+            DepartmentSearchForm request) {
 
         Specification<Department> where =
                 request.getStatus() == null

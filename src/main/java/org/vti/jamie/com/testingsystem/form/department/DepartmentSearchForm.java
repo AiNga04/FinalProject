@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests.department;
+package org.vti.jamie.com.testingsystem.form.department;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -10,7 +10,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class DepartmentSearchRequest {
+public class DepartmentSearchForm {
     @Size(max = 100)
     private String search;
 

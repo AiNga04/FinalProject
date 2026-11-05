@@ -13,9 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.vti.jamie.com.testingsystem.dto.requests.account.*;
-import org.vti.jamie.com.testingsystem.dto.responses.account.AccountResponse;
-import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
+import org.vti.jamie.com.testingsystem.form.account.*;
+import org.vti.jamie.com.testingsystem.dto.account.AccountResponse;
+import org.vti.jamie.com.testingsystem.dto.ApiResponse;
 import org.vti.jamie.com.testingsystem.service.IAccountService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -41,7 +41,7 @@ public class AccountController {
     @Operation(summary = "ADMIN: danh sách tài khoản, tìm kiếm, lọc và phân trang")
     public ResponseEntity<ApiResponse<List<AccountResponse>>> list(
             @Valid @ParameterObject
-            @ModelAttribute AccountSearchRequest request,
+            @ModelAttribute AccountSearchForm request,
             @ParameterObject Pageable pageable) {
         Page<AccountResponse> page = accountService.getAccounts(request, pageable);
         return ResponseEntity.ok(ApiResponse.success(
@@ -65,7 +65,7 @@ public class AccountController {
     @PostMapping
     @Operation(summary = "ADMIN: tạo tài khoản")
     public ResponseEntity<ApiResponse<AccountResponse>> create(
-            @Valid @RequestBody CreateAccountRequest request,
+            @Valid @RequestBody CreateAccountForm request,
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 201,
@@ -78,7 +78,7 @@ public class AccountController {
     @Operation(summary = "ADMIN: cập nhật các trường được truyền; departmentId=null để bỏ phòng ban")
     public ResponseEntity<ApiResponse<AccountResponse>> update(
             @PathVariable @Positive Long id,
-            @Valid @RequestBody UpdateAccountRequest request,
+            @Valid @RequestBody UpdateAccountForm request,
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(
                 200,
@@ -91,7 +91,7 @@ public class AccountController {
     @Operation(summary = "ADMIN: đổi trạng thái một tài khoản, hỗ trợ xóa mềm và khôi phục")
     public ResponseEntity<ApiResponse<AccountResponse>> updateStatus(
             @PathVariable @Positive Long id,
-            @Valid @RequestBody UpdateAccountStatusRequest request,
+            @Valid @RequestBody UpdateAccountStatusForm request,
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(
                 200,
@@ -103,7 +103,7 @@ public class AccountController {
     @PatchMapping("/updateStatusList")
     @Operation(summary = "ADMIN: đổi trạng thái hàng loạt, DELETED để xóa mềm, ACTIVE/INACTIVE để khôi phục")
     public ResponseEntity<ApiResponse<List<AccountResponse>>> updateStatusList(
-            @Valid @RequestBody UpdateAccountStatusListRequest request,
+            @Valid @RequestBody UpdateAccountStatusListForm request,
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(
                 200,

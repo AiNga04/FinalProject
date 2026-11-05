@@ -9,10 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.LoginRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.RefreshTokenRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
-import org.vti.jamie.com.testingsystem.dto.responses.auth.LoginResponse;
+import org.vti.jamie.com.testingsystem.form.auth.LoginForm;
+import org.vti.jamie.com.testingsystem.form.auth.RefreshTokenForm;
+import org.vti.jamie.com.testingsystem.dto.ApiResponse;
+import org.vti.jamie.com.testingsystem.dto.auth.LoginResponse;
 import org.vti.jamie.com.testingsystem.service.IAuthService;
 
 @Validated
@@ -25,7 +25,7 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Đăng nhập bằng username và password")
     public ResponseEntity<ApiResponse<LoginResponse>> login(
-            @Valid @RequestBody LoginRequest request
+            @Valid @RequestBody LoginForm request
     ) {
         LoginResponse response = authService.login(request);
 
@@ -41,7 +41,7 @@ public class AuthController {
     @PostMapping("/refresh")
     @Operation(summary = "Cấp cặp token mới bằng refresh token")
     public ResponseEntity<ApiResponse<LoginResponse>> refresh(
-            @Valid @RequestBody RefreshTokenRequest request
+            @Valid @RequestBody RefreshTokenForm request
     ) {
         LoginResponse response = authService.refresh(request);
         return ResponseEntity.ok(ApiResponse.success(

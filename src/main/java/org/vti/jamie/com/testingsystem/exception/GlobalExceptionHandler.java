@@ -10,7 +10,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
+import org.vti.jamie.com.testingsystem.dto.ApiResponse;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;

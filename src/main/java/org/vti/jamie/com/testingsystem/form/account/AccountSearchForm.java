@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests.account;
+package org.vti.jamie.com.testingsystem.form.account;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -8,7 +8,7 @@ import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
 @Getter
 @Setter
-public class AccountSearchRequest {
+public class AccountSearchForm {
     @Size(max = 100)
     private String search;
 

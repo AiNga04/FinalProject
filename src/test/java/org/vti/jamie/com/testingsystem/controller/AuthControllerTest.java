@@ -7,8 +7,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.server.ResponseStatusException;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.RefreshTokenRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.auth.LoginResponse;
+import org.vti.jamie.com.testingsystem.form.auth.RefreshTokenForm;
+import org.vti.jamie.com.testingsystem.dto.auth.LoginResponse;
 import org.vti.jamie.com.testingsystem.exception.GlobalExceptionHandler;
 import org.vti.jamie.com.testingsystem.service.IAuthService;
 
@@ -30,7 +30,7 @@ class AuthControllerTest {
 
     @Test
     void refreshReturnsApiResponseWithNewPair() throws Exception {
-        when(service.refresh(new RefreshTokenRequest("old-refresh")))
+        when(service.refresh(new RefreshTokenForm("old-refresh")))
                 .thenReturn(new LoginResponse("new-access", "new-refresh"));
         mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"old-refresh\"}"))
@@ -53,7 +53,7 @@ class AuthControllerTest {
 
     @Test
     void invalidRefreshTokenReturnsUnauthorizedApiResponse() throws Exception {
-        when(service.refresh(new RefreshTokenRequest("invalid")))
+        when(service.refresh(new RefreshTokenForm("invalid")))
                 .thenThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "Refresh token không hợp lệ hoặc đã hết hạn"));
         mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)

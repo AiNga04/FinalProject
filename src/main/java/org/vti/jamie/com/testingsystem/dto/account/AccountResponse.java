@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.responses.account;
+package org.vti.jamie.com.testingsystem.dto.account;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

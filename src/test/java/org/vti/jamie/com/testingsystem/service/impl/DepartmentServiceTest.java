@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.vti.jamie.com.testingsystem.config.ModelMapperConfig;
 import org.vti.jamie.com.testingsystem.mapper.DepartmentMapper;
-import org.vti.jamie.com.testingsystem.dto.requests.department.CreateDepartmentRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.department.DepartmentSearchRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.department.UpdateDepartmentRequest;
+import org.vti.jamie.com.testingsystem.form.department.CreateDepartmentForm;
+import org.vti.jamie.com.testingsystem.form.department.DepartmentSearchForm;
+import org.vti.jamie.com.testingsystem.form.department.UpdateDepartmentForm;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.entity.Department;
 import org.vti.jamie.com.testingsystem.exception.*;
@@ -105,7 +105,7 @@ class DepartmentServiceTest {
         department.setCreatedBy(1L);
         when(departments.findById(10L)).thenReturn(Optional.of(department));
         when(departments.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
-        UpdateDepartmentRequest request = new UpdateDepartmentRequest();
+        UpdateDepartmentForm request = new UpdateDepartmentForm();
         request.setName(" New name ");
 
         var response = service.update(10L, request, "3");
@@ -122,7 +122,7 @@ class DepartmentServiceTest {
         Department department = department(10L, EN_Status.ACTIVE);
         when(departments.findById(10L)).thenReturn(Optional.of(department));
         when(departments.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
-        UpdateDepartmentRequest request = new UpdateDepartmentRequest();
+        UpdateDepartmentForm request = new UpdateDepartmentForm();
         request.setType(" HR ");
 
         var response = service.update(10L, request, "3");
@@ -136,7 +136,7 @@ class DepartmentServiceTest {
     void deletedDepartmentMustBeRestoredBeforeEditing() {
         when(departments.findById(10L)).thenReturn(Optional.of(department(10L, EN_Status.DELETED)));
         assertThrows(ResourceConflictException.class,
-                () -> service.update(10L, new UpdateDepartmentRequest(), "3"));
+                () -> service.update(10L, new UpdateDepartmentForm(), "3"));
         verify(departments, never()).saveAndFlush(any());
     }
 
@@ -144,7 +144,7 @@ class DepartmentServiceTest {
     void duplicateNameOnUpdateIsRejected() {
         when(departments.findById(10L)).thenReturn(Optional.of(department(10L, EN_Status.ACTIVE)));
         when(departments.existsByNameAndIdNot("Existing", 10L)).thenReturn(true);
-        UpdateDepartmentRequest request = new UpdateDepartmentRequest();
+        UpdateDepartmentForm request = new UpdateDepartmentForm();
         request.setName("Existing");
         assertThrows(DuplicateResourceException.class, () -> service.update(10L, request, "3"));
     }
@@ -220,7 +220,7 @@ class DepartmentServiceTest {
         when(accounts.countMembersByDepartmentIds(List.of(10L, 11L), EN_Status.DELETED))
                 .thenReturn(List.of(count));
 
-        var page = service.getDepartments(new DepartmentSearchRequest(), PageRequest.of(0, 10));
+        var page = service.getDepartments(new DepartmentSearchForm(), PageRequest.of(0, 10));
 
         assertEquals(16, page.getTotalElements());
         assertEquals(4, page.getContent().get(0).getTotalMember());
@@ -231,7 +231,7 @@ class DepartmentServiceTest {
 
     @Test
     void invalidDateRangeIsRejectedBeforeDatabaseQuery() {
-        DepartmentSearchRequest request = new DepartmentSearchRequest();
+        DepartmentSearchForm request = new DepartmentSearchForm();
         request.setMinCreatedDate(LocalDate.of(2026, 10, 29));
         request.setMaxCreatedDate(LocalDate.of(2026, 10, 1));
         assertThrows(IllegalArgumentException.class,
@@ -256,8 +256,8 @@ class DepartmentServiceTest {
         return department;
     }
 
-    private CreateDepartmentRequest createRequest() {
-        CreateDepartmentRequest request = new CreateDepartmentRequest();
+    private CreateDepartmentForm createRequest() {
+        CreateDepartmentForm request = new CreateDepartmentForm();
         request.setName(" Engineering ");
         request.setType(" DEV ");
         return request;

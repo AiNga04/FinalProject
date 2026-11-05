@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests.account;
+package org.vti.jamie.com.testingsystem.form.account;
 
 import jakarta.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,7 +10,7 @@ import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 @Getter
 @Setter
 @NoArgsConstructor
-public class CreateAccountRequest {
+public class CreateAccountForm {
     @NotBlank @Size(max = 50)
     private String username;
 

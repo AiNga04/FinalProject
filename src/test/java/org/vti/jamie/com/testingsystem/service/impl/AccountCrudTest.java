@@ -6,8 +6,8 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.vti.jamie.com.testingsystem.config.ModelMapperConfig;
 import org.vti.jamie.com.testingsystem.mapper.AccountMapper;
-import org.vti.jamie.com.testingsystem.dto.requests.account.CreateAccountRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.account.UpdateAccountRequest;
+import org.vti.jamie.com.testingsystem.form.account.CreateAccountForm;
+import org.vti.jamie.com.testingsystem.form.account.UpdateAccountForm;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.exception.DuplicateResourceException;
 import org.vti.jamie.com.testingsystem.exception.ResourceConflictException;
@@ -240,7 +240,7 @@ class AccountCrudTest {
         account.setPasswordHash("existing-hash");
         when(repository.findById(7L)).thenReturn(Optional.of(account));
         when(repository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
-        UpdateAccountRequest request = new UpdateAccountRequest();
+        UpdateAccountForm request = new UpdateAccountForm();
         request.setFirstName(" Updated ");
 
         var response = service.update(7L, request, "3");
@@ -262,7 +262,7 @@ class AccountCrudTest {
         Account account = account(7L, EN_Status.ACTIVE);
         when(repository.findById(7L)).thenReturn(Optional.of(account));
         when(repository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
-        UpdateAccountRequest request = new UpdateAccountRequest();
+        UpdateAccountForm request = new UpdateAccountForm();
         request.setUsername(" new-user ");
         request.setEmail(" user@example.com ");
         request.setLastName(" Updated ");
@@ -284,7 +284,7 @@ class AccountCrudTest {
         account.setDepartmentId(9L);
         when(repository.findById(7L)).thenReturn(Optional.of(account));
         when(repository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
-        UpdateAccountRequest request = new UpdateAccountRequest();
+        UpdateAccountForm request = new UpdateAccountForm();
         request.setDepartmentId(null);
 
         var response = service.update(7L, request, "3");
@@ -299,7 +299,7 @@ class AccountCrudTest {
         when(repository.findById(7L)).thenReturn(Optional.of(account));
         when(repository.countActiveDepartment(9L)).thenReturn(1L);
         when(repository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
-        UpdateAccountRequest request = new UpdateAccountRequest();
+        UpdateAccountForm request = new UpdateAccountForm();
         request.setDepartmentId(9L);
 
         assertEquals(9L, service.update(7L, request, "3").getDepartmentId());
@@ -341,8 +341,8 @@ class AccountCrudTest {
         return account;
     }
 
-    private CreateAccountRequest createRequest() {
-        CreateAccountRequest request = new CreateAccountRequest();
+    private CreateAccountForm createRequest() {
+        CreateAccountForm request = new CreateAccountForm();
         request.setUsername("new-user");
         request.setEmail("user@example.com");
         request.setPassword("test-password");
@@ -352,8 +352,8 @@ class AccountCrudTest {
         return request;
     }
 
-    private UpdateAccountRequest updateRequest() {
-        UpdateAccountRequest request = new UpdateAccountRequest();
+    private UpdateAccountForm updateRequest() {
+        UpdateAccountForm request = new UpdateAccountForm();
         request.setUsername("new-user");
         request.setEmail("user@example.com");
         request.setFirstName("Test");

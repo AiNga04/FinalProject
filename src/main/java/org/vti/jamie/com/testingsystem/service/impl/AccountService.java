@@ -10,16 +10,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.vti.jamie.com.testingsystem.dto.requests.account.AccountSearchRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.account.CreateAccountRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.account.UpdateAccountRequest;
+import org.vti.jamie.com.testingsystem.form.account.AccountSearchForm;
+import org.vti.jamie.com.testingsystem.form.account.CreateAccountForm;
+import org.vti.jamie.com.testingsystem.form.account.UpdateAccountForm;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.exception.DuplicateResourceException;
 import org.vti.jamie.com.testingsystem.exception.ResourceConflictException;
 import org.vti.jamie.com.testingsystem.exception.ResourceNotFoundException;
 import org.vti.jamie.com.testingsystem.mapper.AccountMapper;
 import org.vti.jamie.com.testingsystem.repository.IRefreshTokenRepository;
-import org.vti.jamie.com.testingsystem.dto.responses.account.AccountResponse;
+import org.vti.jamie.com.testingsystem.dto.account.AccountResponse;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 import org.vti.jamie.com.testingsystem.service.IAccountService;
 import org.vti.jamie.com.testingsystem.specification.AccountSpecification;
@@ -65,7 +65,7 @@ public class AccountService implements IAccountService {
     @Override
     @Transactional(readOnly = true)
     public Page<AccountResponse> getAccounts(
-            AccountSearchRequest request,
+            AccountSearchForm request,
             Pageable pageable) {
 
         Specification<Account> where =
@@ -89,7 +89,7 @@ public class AccountService implements IAccountService {
 
     @Override
     @Transactional
-    public AccountResponse create(CreateAccountRequest request, String subject) {
+    public AccountResponse create(CreateAccountForm request, String subject) {
         if (request.getPassword().getBytes(StandardCharsets.UTF_8).length > 72) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Password không được vượt quá 72 byte UTF-8");
@@ -105,7 +105,7 @@ public class AccountService implements IAccountService {
 
     @Override
     @Transactional
-    public AccountResponse update(Long id, UpdateAccountRequest request, String subject) {
+    public AccountResponse update(Long id, UpdateAccountForm request, String subject) {
         Account account = requireAccount(id);
         if (account.getStatus() == EN_Status.DELETED) {
             throw new ResourceConflictException("Hãy khôi phục tài khoản trước khi cập nhật thông tin");

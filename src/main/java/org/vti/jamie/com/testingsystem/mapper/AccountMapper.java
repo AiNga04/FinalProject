@@ -3,9 +3,9 @@ package org.vti.jamie.com.testingsystem.mapper;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
-import org.vti.jamie.com.testingsystem.dto.requests.account.CreateAccountRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.account.UpdateAccountRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.account.AccountResponse;
+import org.vti.jamie.com.testingsystem.form.account.CreateAccountForm;
+import org.vti.jamie.com.testingsystem.form.account.UpdateAccountForm;
+import org.vti.jamie.com.testingsystem.dto.account.AccountResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 
@@ -15,7 +15,7 @@ public class AccountMapper {
 
     private final ModelMapper modelMapper;
 
-    public Account toEntity(CreateAccountRequest request) {
+    public Account toEntity(CreateAccountForm request) {
         Account account = modelMapper.map(request, Account.class);
         account.setUsername(request.getUsername().strip());
         account.setEmail(request.getEmail().strip());
@@ -27,7 +27,7 @@ public class AccountMapper {
     }
 
     public void updateEntity(
-            UpdateAccountRequest request,
+            UpdateAccountForm request,
             Account account) {
 
         modelMapper.map(request, account);

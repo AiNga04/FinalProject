@@ -21,13 +21,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.vti.jamie.com.testingsystem.config.SecurityConfig;
-import org.vti.jamie.com.testingsystem.dto.requests.account.AccountSearchRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.account.CreateAccountRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.account.UpdateAccountRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.account.AccountResponse;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.LoginRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.RefreshTokenRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.auth.LoginResponse;
+import org.vti.jamie.com.testingsystem.form.account.AccountSearchForm;
+import org.vti.jamie.com.testingsystem.form.account.CreateAccountForm;
+import org.vti.jamie.com.testingsystem.form.account.UpdateAccountForm;
+import org.vti.jamie.com.testingsystem.dto.account.AccountResponse;
+import org.vti.jamie.com.testingsystem.form.auth.LoginForm;
+import org.vti.jamie.com.testingsystem.form.auth.RefreshTokenForm;
+import org.vti.jamie.com.testingsystem.dto.auth.LoginResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.vti.jamie.com.testingsystem.exception.GlobalExceptionHandler;
@@ -62,7 +62,7 @@ class AccountSecurityTest {
         decoder = context.getBean(JwtDecoder.class);
         service = context.getBean(IAccountService.class);
         when(service.getAccounts(
-                any(AccountSearchRequest.class),
+                any(AccountSearchForm.class),
                 any(Pageable.class)
         )).thenReturn(org.springframework.data.domain.Page.empty());
         repository = context.getBean(IAccountRepository.class);
@@ -79,7 +79,7 @@ class AccountSecurityTest {
     @Test
     void loginIsPublicUnderApiContextPath() throws Exception {
         var auth = context.getBean(IAuthService.class);
-        var request = new LoginRequest("admin", "test-password");
+        var request = new LoginForm("admin", "test-password");
         when(auth.login(request)).thenReturn(new LoginResponse("access", "refresh"));
 
         mvc.perform(post("/api/v1/auth/login")
@@ -96,7 +96,7 @@ class AccountSecurityTest {
     @Test
     void refreshIsPublicUnderApiContextPath() throws Exception {
         var auth = context.getBean(IAuthService.class);
-        var request = new RefreshTokenRequest("old-refresh");
+        var request = new RefreshTokenForm("old-refresh");
         when(auth.refresh(request)).thenReturn(new LoginResponse("new-access", "new-refresh"));
 
         mvc.perform(post("/api/v1/auth/refresh")
@@ -112,7 +112,7 @@ class AccountSecurityTest {
     @Test
     void wrongPasswordReturnsApplicationErrorRatherThanSecurityRejection() throws Exception {
         var auth = context.getBean(IAuthService.class);
-        var request = new LoginRequest("admin", "wrong-password");
+        var request = new LoginForm("admin", "wrong-password");
         when(auth.login(request)).thenThrow(new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED, "Username hoặc password không chính xác"));
 
@@ -289,7 +289,7 @@ class AccountSecurityTest {
                         .header("Authorization", "Bearer ADMIN"))
                 .andExpect(status().isOk());
         var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(service).getAccounts(any(AccountSearchRequest.class), paging.capture());
+        verify(service).getAccounts(any(AccountSearchForm.class), paging.capture());
         org.junit.jupiter.api.Assertions.assertEquals(10, paging.getValue().getPageSize());
     }
 
@@ -299,7 +299,7 @@ class AccountSecurityTest {
         mvc.perform(get("/api/v1/accounts").header("Authorization", "Bearer ADMIN"))
                 .andExpect(status().isOk());
         var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(service).getAccounts(any(AccountSearchRequest.class), paging.capture());
+        verify(service).getAccounts(any(AccountSearchForm.class), paging.capture());
         org.junit.jupiter.api.Assertions.assertEquals(0, paging.getValue().getPageNumber());
         org.junit.jupiter.api.Assertions.assertEquals(10, paging.getValue().getPageSize());
     }
@@ -311,7 +311,7 @@ class AccountSecurityTest {
                         .header("Authorization", "Bearer ADMIN"))
                 .andExpect(status().isOk());
         var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(service).getAccounts(any(AccountSearchRequest.class), paging.capture());
+        verify(service).getAccounts(any(AccountSearchForm.class), paging.capture());
         org.junit.jupiter.api.Assertions.assertEquals(0, paging.getValue().getPageNumber());
         org.junit.jupiter.api.Assertions.assertEquals(100, paging.getValue().getPageSize());
     }
@@ -344,7 +344,7 @@ class AccountSecurityTest {
                                 + "\"password\":\"test-password\",\"firstName\":\"Test\",\"lastName\":\"User\"}"))
                 .andExpect(status().isCreated());
         var request = org.mockito.ArgumentCaptor.forClass(
-                CreateAccountRequest.class);
+                CreateAccountForm.class);
         verify(service).create(request.capture(), eq("3"));
         org.junit.jupiter.api.Assertions.assertEquals(EN_AccountType.EMPLOYEE,
                 request.getValue().getAccountType());
@@ -361,7 +361,7 @@ class AccountSecurityTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"departmentId\":null}"))
                 .andExpect(status().isOk());
         var request = org.mockito.ArgumentCaptor.forClass(
-                UpdateAccountRequest.class);
+                UpdateAccountForm.class);
         verify(service, times(2)).update(eq(7L), request.capture(), eq("3"));
         org.junit.jupiter.api.Assertions.assertFalse(request.getAllValues().get(0).isDepartmentIdPresent());
         org.junit.jupiter.api.Assertions.assertTrue(request.getAllValues().get(1).isDepartmentIdPresent());
@@ -389,7 +389,7 @@ class AccountSecurityTest {
                         .param("departmentId", "7").param("status", "ACTIVE"))
                 .andExpect(status().isOk());
         var request = org.mockito.ArgumentCaptor.forClass(
-                AccountSearchRequest.class);
+                AccountSearchForm.class);
         var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
         verify(service).getAccounts(request.capture(), paging.capture());
         var filters = request.getValue();
@@ -407,7 +407,7 @@ class AccountSecurityTest {
         AccountResponse account = new AccountResponse();
         account.setId(7L);
         account.setUsername("employee01");
-        when(service.getAccounts(any(AccountSearchRequest.class), any(Pageable.class)))
+        when(service.getAccounts(any(AccountSearchForm.class), any(Pageable.class)))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(
                 java.util.List.of(account), org.springframework.data.domain.PageRequest.of(0, 10), 16));
 
@@ -425,7 +425,7 @@ class AccountSecurityTest {
     void emptyPageReturnsEmptyArrayAndStillPreservesFilteredTotal() throws Exception {
         stubToken("ADMIN");
         when(service.getAccounts(
-                any(AccountSearchRequest.class),
+                any(AccountSearchForm.class),
                 any(Pageable.class)
         )).thenReturn(new org.springframework.data.domain.PageImpl<>(
                 java.util.List.of(), org.springframework.data.domain.PageRequest.of(2, 10), 16));
@@ -435,7 +435,7 @@ class AccountSecurityTest {
                 .andExpect(jsonPath("$.data").isEmpty())
                 .andExpect(jsonPath("$.data2nd").value(16));
         var paging = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(service).getAccounts(any(AccountSearchRequest.class), paging.capture());
+        verify(service).getAccounts(any(AccountSearchForm.class), paging.capture());
         org.junit.jupiter.api.Assertions.assertEquals(2, paging.getValue().getPageNumber());
     }
 

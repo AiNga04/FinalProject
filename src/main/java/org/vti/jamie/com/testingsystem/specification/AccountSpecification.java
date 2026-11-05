@@ -7,7 +7,7 @@ import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
-import org.vti.jamie.com.testingsystem.dto.requests.account.AccountSearchRequest;
+import org.vti.jamie.com.testingsystem.form.account.AccountSearchForm;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
@@ -20,7 +20,7 @@ public final class AccountSpecification {
     }
 
     public static Specification<Account> buildWhere(
-            AccountSearchRequest request) {
+            AccountSearchForm request) {
 
         // Luôn có điều kiện ban đầu, không cần where = null.
         Specification<Account> where =

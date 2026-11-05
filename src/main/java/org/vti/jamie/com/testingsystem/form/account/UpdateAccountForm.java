@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests.account;
+package org.vti.jamie.com.testingsystem.form.account;
 
 import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -12,7 +12,7 @@ import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 @Getter
 @Setter
 @NoArgsConstructor
-public class UpdateAccountRequest {
+public class UpdateAccountForm {
     @JsonSetter(nulls = Nulls.FAIL)
     @Pattern(regexp = "(?sU).*\\S.*", message = "Username không được để trống")
     @Size(max = 50)

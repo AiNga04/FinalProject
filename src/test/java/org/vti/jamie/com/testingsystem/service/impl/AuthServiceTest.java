@@ -14,9 +14,9 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.LoginRequest;
-import org.vti.jamie.com.testingsystem.dto.requests.auth.RefreshTokenRequest;
-import org.vti.jamie.com.testingsystem.dto.responses.ApiResponse;
+import org.vti.jamie.com.testingsystem.form.auth.LoginForm;
+import org.vti.jamie.com.testingsystem.form.auth.RefreshTokenForm;
+import org.vti.jamie.com.testingsystem.dto.ApiResponse;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.entity.RefreshToken;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
@@ -56,7 +56,7 @@ class AuthServiceTest {
                 .header("alg", "HS256").subject("3").build());
         when(refreshTokenService.create(eq(account), anyString())).thenReturn("refresh-token");
 
-        var result = service.login(new LoginRequest("admin", "test-password"));
+        var result = service.login(new LoginForm("admin", "test-password"));
 
         var mapper = new JsonMapper();
         var json = mapper.readTree(mapper.writeValueAsString(
@@ -86,7 +86,7 @@ class AuthServiceTest {
                 .thenThrow(new BadCredentialsException("Bad credentials"));
 
         var exception = assertThrows(ResponseStatusException.class,
-                () -> service.login(new LoginRequest("admin", "wrong-password")));
+                () -> service.login(new LoginForm("admin", "wrong-password")));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         verifyNoInteractions(accountRepository, jwtEncoder, refreshTokenService);
@@ -98,7 +98,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(account(EN_Status.INACTIVE)));
 
         var exception = assertThrows(ResponseStatusException.class,
-                () -> service.login(new LoginRequest("admin", "test-password")));
+                () -> service.login(new LoginForm("admin", "test-password")));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         verifyNoInteractions(jwtEncoder, refreshTokenService);
@@ -115,7 +115,7 @@ class AuthServiceTest {
                 .header("alg", "HS256").subject("3").build());
         when(refreshTokenService.create(account, "same-session")).thenReturn("new-refresh");
 
-        var response = service.refresh(new RefreshTokenRequest("old-refresh"));
+        var response = service.refresh(new RefreshTokenForm("old-refresh"));
 
         assertEquals("new-access", response.accessToken());
         assertEquals("new-refresh", response.refreshToken());
@@ -134,7 +134,7 @@ class AuthServiceTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 
         assertThrows(ResponseStatusException.class,
-                () -> service.refresh(new RefreshTokenRequest("invalid")));
+                () -> service.refresh(new RefreshTokenForm("invalid")));
 
         verifyNoInteractions(jwtEncoder, authenticationManager, accountRepository);
         verify(refreshTokenService, never()).create(any(), any());

@@ -1,4 +1,4 @@
-package org.vti.jamie.com.testingsystem.dto.requests.department;
+package org.vti.jamie.com.testingsystem.form.department;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public class CreateDepartmentRequest {
+public class CreateDepartmentForm {
     @NotBlank(message = "Tên phòng ban không được để trống")
     @Size(max = 50)
     private String name;
