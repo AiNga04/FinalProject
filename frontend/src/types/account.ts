@@ -17,16 +17,16 @@ export interface Account {
 }
 
 export interface AccountSearchParams extends PaginationParams {
-  search?: string // Tìm username, email, name
-  accountType?: AccountType
-  status?: Status
-  departmentId?: number
+  search?: string | undefined // Tìm username, email, name
+  accountType?: AccountType | undefined
+  status?: Status | undefined
+  departmentId?: number | undefined
 }
 
 export interface CreateAccountRequest {
   username: string
   email: string
-  password?: string
+  password?: string | undefined
   firstName: string
   lastName: string
   accountType: AccountType
@@ -34,9 +34,9 @@ export interface CreateAccountRequest {
 }
 
 export interface UpdateAccountRequest {
-  email?: string
-  firstName?: string
-  lastName?: string
-  accountType?: AccountType
-  departmentId?: number
+  email?: string | undefined
+  firstName?: string | undefined
+  lastName?: string | undefined
+  accountType?: AccountType | undefined
+  departmentId?: number | undefined
 }

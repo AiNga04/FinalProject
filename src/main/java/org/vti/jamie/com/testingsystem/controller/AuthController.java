@@ -81,10 +81,10 @@ public class AuthController {
     private ResponseCookie buildRefreshTokenCookie(String token, Duration maxAge) {
         return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, token)
                 .httpOnly(true)
-                .secure(false) // để chạy được trên localhost http://
+                .secure(true)   // SameSite=None bắt buộc phải có Secure=true; Chrome chấp nhận trên localhost
                 .path("/api/v1/auth")
                 .maxAge(maxAge)
-                .sameSite("Lax")
+                .sameSite("None") // Cho phép gửi cookie trong cross-origin request (FE:5173 → BE:8080)
                 .build();
     }
 }

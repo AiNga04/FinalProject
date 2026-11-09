@@ -12,9 +12,9 @@ export interface Department {
 }
 
 export interface DepartmentSearchParams extends PaginationParams {
-  search?: string
-  type?: string
-  status?: Status
+  search?: string | undefined
+  type?: string | undefined
+  status?: Status | undefined
 }
 
 export interface CreateDepartmentRequest {
@@ -23,6 +23,6 @@ export interface CreateDepartmentRequest {
 }
 
 export interface UpdateDepartmentRequest {
-  name?: string
-  type?: string
+  name?: string | undefined
+  type?: string | undefined
 }

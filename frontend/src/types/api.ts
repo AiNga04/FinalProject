@@ -18,7 +18,7 @@ export interface PageResponse<T> {
 
 // Phân trang gửi lên Backend
 export interface PaginationParams {
-  pageNumber?: number // Mặc định từ 1
-  size?: number // Mặc định 10
-  sort?: string
+  pageNumber?: number | undefined // Mặc định từ 1
+  size?: number | undefined // Mặc định 10
+  sort?: string | undefined
 }

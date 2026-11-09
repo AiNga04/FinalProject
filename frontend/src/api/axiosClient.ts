@@ -4,6 +4,14 @@ import type { LoginResponse } from '@/types/auth'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
+// Instance axios không có interceptor, dùng riêng để gọi /auth/refresh tránh vòng lặp vô tận
+const axiosRefresh = axios.create({
+  baseURL: BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+  timeout: 15000,
+})
+
 /**
  * 🔒 BẢO MẬT CHUẨN XSS & CSRF:
  * - Access Token: Lưu hoàn toàn trong RUNTIME MEMORY (biến in-memory), KHÔNG lưu trong localStorage.
@@ -95,16 +103,9 @@ axiosClient.interceptors.response.use(
       isRefreshing = true
 
       try {
-        // Gọi API /auth/refresh bằng axios độc lập kèm withCredentials: true.
-        // Trình duyệt sẽ tự động gửi kèm HttpOnly Cookie chứa refreshToken!
-        const refreshResponse = await axios.post<ApiResponse<LoginResponse>>(
-          `${BASE_URL}/auth/refresh`,
-          {},
-          {
-            headers: { 'Content-Type': 'application/json' },
-            withCredentials: true,
-          }
-        )
+        // Gọi API /auth/refresh qua axiosRefresh (instance riêng, không có interceptor retry)
+        // để tránh vòng lặp vô tận. Trình duyệt tự gửi kèm HttpOnly Cookie!
+        const refreshResponse = await axiosRefresh.post<ApiResponse<LoginResponse>>('/auth/refresh')
 
         const newAccessToken = refreshResponse.data.data.accessToken
         setAccessToken(newAccessToken)
