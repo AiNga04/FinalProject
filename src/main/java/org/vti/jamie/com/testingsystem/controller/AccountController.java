@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.vti.jamie.com.testingsystem.form.account.*;
 import org.vti.jamie.com.testingsystem.dto.account.AccountResponse;
 import org.vti.jamie.com.testingsystem.dto.ApiResponse;
+import org.vti.jamie.com.testingsystem.dto.PageResponse;
 import org.vti.jamie.com.testingsystem.service.IAccountService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -39,16 +40,14 @@ public class AccountController {
 
     @GetMapping
     @Operation(summary = "ADMIN: danh sách tài khoản, tìm kiếm, lọc và phân trang")
-    public ResponseEntity<ApiResponse<List<AccountResponse>>> list(
+    public ResponseEntity<ApiResponse<PageResponse<AccountResponse>>> list(
             @Valid @ParameterObject
             @ModelAttribute AccountSearchForm request,
             @ParameterObject Pageable pageable) {
         Page<AccountResponse> page = accountService.getAccounts(request, pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                200,
                 "Lấy danh sách tài khoản thành công",
-                page.getContent(),
-                page.getTotalElements())
+                PageResponse.from(page))
         );
     }
 

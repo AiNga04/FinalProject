@@ -73,7 +73,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         ? "Giá trị không hợp lệ" : validationError.getDefaultMessage());
             }
         }
-        return new ResponseEntity<>(ApiResponse.error(400, "Dữ liệu đầu vào không hợp lệ", errors),
+        return new ResponseEntity<>(ApiResponse.error("Dữ liệu đầu vào không hợp lệ", errors),
                 headers, HttpStatus.BAD_REQUEST);
     }
 
@@ -95,7 +95,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             message = responseStatusException.getReason();
         }
 
-        return new ResponseEntity<>(ApiResponse.error(status.value(), message, Map.of()),
+        return new ResponseEntity<>(ApiResponse.error(message, Map.of()),
                 headers, status);
     }
 
@@ -106,6 +106,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private ResponseEntity<Object> error(HttpStatus status, String message, Map<String, String> errors) {
-        return ResponseEntity.status(status).body(ApiResponse.error(status.value(), message, errors));
+        return ResponseEntity.status(status).body(ApiResponse.error(message, errors));
     }
 }

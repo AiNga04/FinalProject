@@ -35,10 +35,10 @@ class AuthControllerTest {
         mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"old-refresh\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.result").value(1))
+                .andExpect(jsonPath("$.message").value("Làm mới token thành công"))
                 .andExpect(jsonPath("$.data.accessToken").value("new-access"))
                 .andExpect(jsonPath("$.data.refreshToken").value("new-refresh"))
-                .andExpect(jsonPath("$.error.code").value(200));
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
@@ -46,8 +46,8 @@ class AuthControllerTest {
         mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.result").value(0))
-                .andExpect(jsonPath("$.error.details.refreshToken").exists());
+                .andExpect(jsonPath("$.message").value("Dữ liệu đầu vào không hợp lệ"))
+                .andExpect(jsonPath("$.errors.refreshToken").exists());
         verifyNoInteractions(service);
     }
 
@@ -59,7 +59,7 @@ class AuthControllerTest {
         mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"invalid\"}"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.result").value(0))
-                .andExpect(jsonPath("$.error.code").value(401));
+                .andExpect(jsonPath("$.message").value("Refresh token không hợp lệ hoặc đã hết hạn"))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }

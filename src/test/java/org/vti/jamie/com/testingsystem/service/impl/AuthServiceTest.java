@@ -60,16 +60,12 @@ class AuthServiceTest {
 
         var mapper = new JsonMapper();
         var json = mapper.readTree(mapper.writeValueAsString(
-                ApiResponse.success(200, "Đăng nhập thành công", result)));
-        assertEquals(1, json.path("result").asInt());
-        assertTrue(json.path("time").asLong() > 0);
-        assertEquals("", json.path("dataDescription").asText());
-        assertTrue(json.path("data2nd").isNull());
+                ApiResponse.success("Đăng nhập thành công", result)));
+        assertEquals("Đăng nhập thành công", json.path("message").asText());
         assertEquals(2, json.path("data").size());
         assertEquals("access-token", json.path("data").path("accessToken").asText());
         assertEquals("refresh-token", json.path("data").path("refreshToken").asText());
-        assertEquals(200, json.path("error").path("code").asInt());
-        assertFalse(json.path("error").has("details"));
+        assertTrue(json.has("timestamp"));
 
         var parameters = ArgumentCaptor.forClass(JwtEncoderParameters.class);
         verify(jwtEncoder).encode(parameters.capture());

@@ -329,7 +329,7 @@ class AccountSecurityTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ids\":[7],\"status\":\"DELETED\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.result").value(1))
+                .andExpect(jsonPath("$.message").value("Cập nhật trạng thái thành công"))
                 .andExpect(jsonPath("$.data[0].id").value(7))
                 .andExpect(jsonPath("$.data[0].status").value("DELETED"));
     }

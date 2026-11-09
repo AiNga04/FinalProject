@@ -16,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.vti.jamie.com.testingsystem.form.department.*;
 import org.vti.jamie.com.testingsystem.dto.ApiResponse;
+import org.vti.jamie.com.testingsystem.dto.PageResponse;
 import org.vti.jamie.com.testingsystem.dto.department.DepartmentResponse;
 import org.vti.jamie.com.testingsystem.service.IDepartmentService;
 
@@ -31,12 +32,14 @@ public class DepartmentController {
 
     @GetMapping
     @Operation(summary = "ADMIN: danh sách phòng ban, tìm kiếm, lọc và phân trang")
-    public ResponseEntity<ApiResponse<List<DepartmentResponse>>> list(
+    public ResponseEntity<ApiResponse<PageResponse<DepartmentResponse>>> list(
             @Valid @ParameterObject @ModelAttribute DepartmentSearchForm request,
             @ParameterObject Pageable pageable) {
         Page<DepartmentResponse> page = departmentService.getDepartments(request, pageable);
-        return ResponseEntity.ok(ApiResponse.success(200, "Lấy danh sách phòng ban thành công",
-                page.getContent(), page.getTotalElements()));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lấy danh sách phòng ban thành công",
+                PageResponse.from(page)
+        ));
     }
 
     @GetMapping("/{id}")

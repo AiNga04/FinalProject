@@ -1,72 +1,50 @@
 package org.vti.jamie.com.testingsystem.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.Instant;
 import java.util.Map;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ApiResponse<T>(
-        int result,
-        long time,
-        String dataDescription,
+        String message,
         T data,
-        Object data2nd,
-        ErrorInfo error
+        Map<String, String> errors,
+        @JsonFormat(shape = JsonFormat.Shape.STRING, timezone = "UTC")
+        Instant timestamp
 ) {
 
-    public record ErrorInfo(
-            int code,
-            String message,
-
-            @JsonInclude(JsonInclude.Include.NON_EMPTY)
-            Map<String, String> details
-    ) {
+    public static <T> ApiResponse<T> success(String message, T data) {
+        return new ApiResponse<>(message, data, null, Instant.now());
     }
 
-    public static <T> ApiResponse<T> success(
-            int status,
-            String message,
-            T data
-    ) {
-        return success(status, message, data, null);
+    public static <T> ApiResponse<T> success(int status, String message, T data) {
+        return success(message, data);
     }
 
-    public static <T> ApiResponse<T> success(
-            int status,
-            String message,
-            T data,
-            Object data2nd
-    ) {
+    public static <T> ApiResponse<T> success(int status, String message, T data, Object unused) {
+        return success(message, data);
+    }
+
+    public static <T> ApiResponse<T> success(T data) {
+        return success("Thành công", data);
+    }
+
+    public static ApiResponse<Void> error(String message, Map<String, String> errors) {
         return new ApiResponse<>(
-                1,
-                Instant.now().getEpochSecond(),
-                "",
-                data,
-                data2nd,
-                new ErrorInfo(
-                        status,
-                        message,
-                        Map.of()
-                )
+                message,
+                null,
+                errors == null || errors.isEmpty() ? null : Map.copyOf(errors),
+                Instant.now()
         );
     }
 
-    public static ApiResponse<Void> error(
-            int status,
-            String message,
-            Map<String, String> details
-    ) {
-        return new ApiResponse<>(
-                0,
-                Instant.now().getEpochSecond(),
-                "",
-                null,
-                null,
-                new ErrorInfo(
-                        status,
-                        message,
-                        Map.copyOf(details)
-                )
-        );
+    public static ApiResponse<Void> error(int status, String message, Map<String, String> errors) {
+        return error(message, errors);
+    }
+
+    public static ApiResponse<Void> error(String message) {
+        return error(message, null);
     }
 }
