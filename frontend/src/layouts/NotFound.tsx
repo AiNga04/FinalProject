@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
-import { Home } from 'lucide-react'
+import { Link } from "react-router-dom";
+import { Home } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -7,9 +7,12 @@ export default function NotFound() {
       <div className="w-16 h-16 rounded-2xl bg-[#C8792C]/10 text-[#C8792C] flex items-center justify-center font-black text-3xl mb-4 border border-[#C8792C]/30">
         404
       </div>
-      <h1 className="text-2xl font-bold text-[#5B4632] mb-2">Trang Không Tồn Tại</h1>
+      <h1 className="text-2xl font-bold text-[#5B4632] mb-2">
+        Trang Không Tồn Tại
+      </h1>
       <p className="text-xs text-[#5B4632]/70 max-w-sm mb-6">
-        Đường dẫn bạn yêu cầu không tồn tại hoặc đã được di chuyển sang địa chỉ khác trong hệ thống.
+        Đường dẫn bạn yêu cầu không tồn tại hoặc đã được di chuyển sang địa chỉ
+        khác trong hệ thống.
       </p>
       <Link
         to="/dashboard"
@@ -19,6 +22,5 @@ export default function NotFound() {
         <span>Về Trang Chủ</span>
       </Link>
     </div>
-  )
+  );
 }
-

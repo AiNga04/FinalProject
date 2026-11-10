@@ -116,6 +116,15 @@ public class AccountController {
         return ResponseEntity.ok(ApiResponse.success("Xóa avatar thành công", null));
     }
 
+    @DeleteMapping("/me/avatar/{avatarId}")
+    @Operation(summary = "Xóa avatar trong lịch sử của chính mình")
+    public ResponseEntity<ApiResponse<Void>> deleteMyAvatar(
+            @PathVariable @Positive Long avatarId,
+            @AuthenticationPrincipal Jwt jwt) {
+        accountAvatarService.delete(avatarId, Long.valueOf(jwt.getSubject()));
+        return ResponseEntity.ok(ApiResponse.success("Xóa avatar thành công", null));
+    }
+
     @DeleteMapping("/{accountId}/avatars/{avatarId}")
     @Operation(summary = "ADMIN: xóa mềm một avatar trong lịch sử")
     public ResponseEntity<ApiResponse<Void>> deleteAccountAvatar(
@@ -146,6 +155,16 @@ public class AccountController {
             @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(
                 "Khôi phục avatar thành công",
+                accountAvatarService.restore(avatarId, Long.valueOf(jwt.getSubject()))));
+    }
+
+    @PatchMapping("/me/avatar/{avatarId}/restore")
+    @Operation(summary = "Chọn lại avatar trong lịch sử làm avatar hiện tại")
+    public ResponseEntity<ApiResponse<AvatarResponse>> restoreMyAvatar(
+            @PathVariable @Positive Long avatarId,
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Đặt avatar thành công",
                 accountAvatarService.restore(avatarId, Long.valueOf(jwt.getSubject()))));
     }
 

@@ -1,31 +1,31 @@
-import type { Status } from './account'
-import type { PaginationParams } from './api'
+import type { Status } from "./account";
+import type { PaginationParams } from "./api";
 
 export interface Department {
-  id: number
-  name: string
-  type: string
-  totalMember: number
-  status: Status
-  createdAt: string
-  updatedAt?: string
+  id: number;
+  name: string;
+  type: string;
+  totalMember: number;
+  status: Status;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface DepartmentSearchParams extends PaginationParams {
-  search?: string | undefined
-  type?: string | undefined
-  status?: Status | undefined
-  minCreatedDate?: string | undefined
-  maxCreatedDate?: string | undefined
+  search?: string | undefined;
+  type?: string | undefined;
+  status?: Status | undefined;
+  minCreatedDate?: string | undefined;
+  maxCreatedDate?: string | undefined;
 }
 
 export interface CreateDepartmentRequest {
-  name: string
-  type: string
-  accountIds?: number[]
+  name: string;
+  type: string;
+  accountIds?: number[];
 }
 
 export interface UpdateDepartmentRequest {
-  name?: string | undefined
-  type?: string | undefined
+  name?: string | undefined;
+  type?: string | undefined;
 }

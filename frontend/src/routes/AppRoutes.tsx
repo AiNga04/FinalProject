@@ -1,14 +1,14 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import MainLayout from '@/layouts/MainLayout'
-import ProtectedRoute from '@/routes/ProtectedRoute'
-import LoginPage from '@/pages/LoginPage'
-import DashboardPage from '@/pages/DashboardPage'
-import AccountPage from '@/pages/AccountPage'
-import DepartmentPage from '@/pages/DepartmentPage'
-import ProfilePage from '@/pages/ProfilePage'
-import AccountDetailPage from '@/pages/AccountDetailPage'
-import NotFound from '@/layouts/NotFound'
-import Forbiddent from '@/layouts/Forbiddent'
+import { Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "@/layouts/MainLayout";
+import ProtectedRoute from "@/routes/ProtectedRoute";
+import LoginPage from "@/pages/LoginPage";
+import DashboardPage from "@/pages/DashboardPage";
+import AccountPage from "@/pages/AccountPage";
+import DepartmentPage from "@/pages/DepartmentPage";
+import ProfilePage from "@/pages/ProfilePage";
+import AccountDetailPage from "@/pages/AccountDetailPage";
+import NotFound from "@/layouts/NotFound";
+import Forbiddent from "@/layouts/Forbiddent";
 
 export default function AppRoutes() {
   return (
@@ -23,13 +23,13 @@ export default function AppRoutes() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          
+
           {/* Admin Only Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
             <Route path="/accounts" element={<AccountPage />} />
             <Route path="/accounts/:id" element={<AccountDetailPage />} />
             {/* DepartmentPage tạm thời dùng placeholder hoặc AccountPage */}
-          <Route path="/departments" element={<DepartmentPage />} />
+            <Route path="/departments" element={<DepartmentPage />} />
           </Route>
         </Route>
       </Route>
@@ -37,6 +37,5 @@ export default function AppRoutes() {
       {/* 404 Route */}
       <Route path="*" element={<NotFound />} />
     </Routes>
-  )
+  );
 }
-

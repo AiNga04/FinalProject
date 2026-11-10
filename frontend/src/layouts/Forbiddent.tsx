@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
-import { ShieldAlert, Home } from 'lucide-react'
+import { Link } from "react-router-dom";
+import { ShieldAlert, Home } from "lucide-react";
 
 export default function Forbiddent() {
   return (
@@ -7,9 +7,12 @@ export default function Forbiddent() {
       <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4 border border-rose-200 shadow-xs">
         <ShieldAlert className="w-8 h-8" />
       </div>
-      <h1 className="text-2xl font-bold text-[#5B4632] mb-2">Truy Cập Bị Từ Chối (403)</h1>
+      <h1 className="text-2xl font-bold text-[#5B4632] mb-2">
+        Truy Cập Bị Từ Chối (403)
+      </h1>
       <p className="text-xs text-[#5B4632]/70 max-w-sm mb-6">
-        Tài khoản của bạn không có đủ thẩm quyền (Role) để truy cập chức năng này trong hệ thống.
+        Tài khoản của bạn không có đủ thẩm quyền (Role) để truy cập chức năng
+        này trong hệ thống.
       </p>
       <Link
         to="/dashboard"
@@ -19,6 +22,5 @@ export default function Forbiddent() {
         <span>Về Trang Chủ</span>
       </Link>
     </div>
-  )
+  );
 }
-

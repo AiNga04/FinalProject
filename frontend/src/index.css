@@ -1,11 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #5B4632;
+  --color-primary: #5b4632;
   --color-primary-dark: #423223;
-  --color-accent: #C8792C;
-  --color-accent-hover: #B26822;
-  --color-cream: #FAF6EE;
-  --color-sand: #F4D9A0;
-  --color-warm-border: #E8DBC5;
+  --color-accent: #c8792c;
+  --color-accent-hover: #b26822;
+  --color-cream: #faf6ee;
+  --color-sand: #f4d9a0;
+  --color-warm-border: #e8dbc5;
+}
+
+/* Kích thước avatar trên Profile nhỏ gọn hơn, không lấn át thông tin. */
+.max-w-5xl {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+}
+
+.max-w-5xl > section:first-of-type > div:first-child {
+  justify-content: flex-start;
+}
+
+.max-w-5xl > section:first-of-type > div:first-child > div:nth-child(2) {
+  text-align: left;
+}
+
+.max-w-5xl > section:first-of-type .justify-center.md\:justify-start {
+  justify-content: flex-start;
+}
+
+.max-w-5xl > section:first-of-type .w-36.h-36 {
+  width: 7rem;
+  height: 7rem;
+  font-size: 1.875rem;
 }
