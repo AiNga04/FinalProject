@@ -120,6 +120,16 @@ public class AccountAvatarServiceImpl implements AccountAvatarService {
 
     @Override
     @Transactional(readOnly = true)
+    public Path getFilePath(Long avatarId, Long accountId) {
+        AccountAvatar avatar = avatarRepository.findById(avatarId)
+                .filter(item -> item.getAccountId().equals(accountId))
+                .filter(item -> item.getStatus() == EN_AvatarStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy avatar"));
+        return storageService.resolve(avatar.getStorageKey());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Path getCurrentFilePath(Long accountId) {
         AccountAvatar avatar = avatarRepository
                 .findByAccountIdAndCurrentTrueAndStatus(accountId, EN_AvatarStatus.ACTIVE)

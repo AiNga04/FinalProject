@@ -10,6 +10,7 @@ interface Props {
   options: Option[];
   onChange: (value: string) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 export default function CustomSelect({
@@ -17,6 +18,7 @@ export default function CustomSelect({
   options,
   onChange,
   className = "",
+  disabled = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -33,8 +35,9 @@ export default function CustomSelect({
     <div ref={ref} className={`relative ${className}`}>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setOpen((current) => !current)}
-        className="w-full flex items-center justify-between gap-3 text-xs bg-white border border-[#E8DBC5] rounded-xl px-3 py-2 text-[#3D2D20] font-medium outline-none hover:border-[#C8792C] focus:border-[#C8792C] cursor-pointer"
+        className="w-full flex items-center justify-between gap-3 text-xs bg-white border border-[#E8DBC5] rounded-xl px-3 py-2 text-[#3D2D20] font-medium outline-none hover:border-[#C8792C] focus:border-[#C8792C] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
       >
         <span>{selected?.label}</span>
         <ChevronDown

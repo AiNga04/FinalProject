@@ -89,6 +89,20 @@ public class AccountController {
         return ResponseEntity.ok().contentType(contentType).body(resource);
     }
 
+    @GetMapping("/me/avatar/{avatarId}/file")
+    @Operation(summary = "Lấy file avatar trong lịch sử của chính mình")
+    public ResponseEntity<Resource> myAvatarFile(
+            @PathVariable @Positive Long avatarId,
+            @AuthenticationPrincipal Jwt jwt) throws java.io.IOException {
+        var path = accountAvatarService.getFilePath(avatarId, Long.valueOf(jwt.getSubject()));
+        Resource resource = new FileSystemResource(path);
+        String detectedType = Files.probeContentType(path);
+        MediaType contentType = detectedType == null
+                ? MediaType.APPLICATION_OCTET_STREAM
+                : MediaType.parseMediaType(detectedType);
+        return ResponseEntity.ok().contentType(contentType).body(resource);
+    }
+
     @GetMapping("/me/avatar/history")
     @Operation(summary = "Lấy lịch sử avatar tài khoản hiện tại")
     public ResponseEntity<ApiResponse<List<AvatarResponse>>> avatarHistory(

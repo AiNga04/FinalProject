@@ -31,7 +31,7 @@ export default function ProfilePage() {
         try {
           return [
             avatar.id,
-            URL.createObjectURL(await avatarApi.getFile(avatar.id)),
+            URL.createObjectURL(await avatarApi.getMyFile(avatar.id)),
           ] as const;
         } catch {
           return null;

@@ -7,6 +7,7 @@ import type {
 } from "@/types/account";
 import type { Department } from "@/types/department";
 import { departmentApi } from "@/api/departmentApi";
+import CustomSelect from "@/components/common/CustomSelect";
 
 interface AccountEditModalProps {
   account: Account;
@@ -188,45 +189,30 @@ export default function AccountEditModal({
             <label className="block text-xs font-bold text-[#5B4632] mb-1.5">
               Vai trò (Role)
             </label>
-            <select
+            <CustomSelect
               value={form.accountType ?? "EMPLOYEE"}
-              onChange={(e) =>
-                handleChange("accountType", e.target.value as AccountType)
-              }
-              className={inputClass}
-            >
-              <option value="EMPLOYEE">EMPLOYEE</option>
-              <option value="MANAGER">MANAGER</option>
-              <option value="ADMIN">ADMIN</option>
-            </select>
+              onChange={(value) => handleChange("accountType", value as AccountType)}
+              options={[
+                { value: "EMPLOYEE", label: "EMPLOYEE" },
+                { value: "MANAGER", label: "MANAGER" },
+                { value: "ADMIN", label: "ADMIN" },
+              ]}
+            />
           </div>
 
           <div>
             <label className="block text-xs font-bold text-[#5B4632] mb-1.5">
               Phòng ban
             </label>
-            <select
-              value={form.departmentId ?? ""}
+            <CustomSelect
+              value={form.departmentId?.toString() ?? ""}
               disabled={isLoadingDepartments}
-              onChange={(e) =>
-                handleChange(
-                  "departmentId",
-                  e.target.value ? Number(e.target.value) : undefined,
-                )
-              }
-              className={inputClass}
-            >
-              <option value="">
-                {isLoadingDepartments
-                  ? "Đang tải phòng ban..."
-                  : "Không thuộc phòng ban"}
-              </option>
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name} ({department.type})
-                </option>
-              ))}
-            </select>
+              onChange={(value) => handleChange("departmentId", value ? Number(value) : undefined)}
+              options={[
+                { value: "", label: isLoadingDepartments ? "Đang tải phòng ban..." : "Không thuộc phòng ban" },
+                ...departments.map((department) => ({ value: department.id.toString(), label: `${department.name} (${department.type})` })),
+              ]}
+            />
           </div>
 
           {/* Footer */}

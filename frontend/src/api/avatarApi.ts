@@ -8,6 +8,7 @@ export const avatarApi = {
   getHistoryByAccount: (accountId: number) => axiosClient.get<unknown, ApiResponse<AvatarResponse[]>>(`/accounts/${accountId}/avatars/history`),
   getMyHistory: () => axiosClient.get<unknown, ApiResponse<AvatarResponse[]>>('/accounts/me/avatar/history'),
   getFile: (avatarId: number) => axiosClient.get<unknown, Blob>(`/accounts/avatars/${avatarId}/file`, { responseType: 'blob' }),
+  getMyFile: (avatarId: number) => axiosClient.get<unknown, Blob>(`/accounts/me/avatar/${avatarId}/file`, { responseType: 'blob' }),
   getCurrentFile: () => axiosClient.get<unknown, Blob>('/accounts/me/avatar/file', { responseType: 'blob' }),
   upload: (file: File) => {
     const formData = new FormData()

@@ -14,5 +14,6 @@ public interface AccountAvatarService {
     void delete(Long avatarId, Long actorId);
     AvatarResponse restore(Long avatarId, Long actorId);
     Path getFilePath(Long avatarId);
+    Path getFilePath(Long avatarId, Long accountId);
     Path getCurrentFilePath(Long accountId);
 }
