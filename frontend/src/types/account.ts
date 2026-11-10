@@ -1,7 +1,7 @@
 import type { PaginationParams } from "./api"
 
 export type AccountType = 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'USER'
-export type Status = 'ACTIVE' | 'PENDING' | 'BLOCKED' | 'DELETED'
+export type Status = 'ACTIVE' | 'INACTIVE' | 'DELETED'
 
 export interface Account {
   id: number
@@ -11,7 +11,7 @@ export interface Account {
   lastName: string
   accountType: AccountType
   status: Status
-  departmentId?: number
+  departmentId?: number | undefined
   departmentName?: string
   createdAt: string
 }
@@ -21,6 +21,8 @@ export interface AccountSearchParams extends PaginationParams {
   accountType?: AccountType | undefined
   status?: Status | undefined
   departmentId?: number | undefined
+  minCreatedDate?: string | undefined
+  maxCreatedDate?: string | undefined
 }
 
 export interface CreateAccountRequest {
@@ -30,10 +32,11 @@ export interface CreateAccountRequest {
   firstName: string
   lastName: string
   accountType: AccountType
-  departmentId: number
+  departmentId?: number | undefined
 }
 
 export interface UpdateAccountRequest {
+  username?: string | undefined
   email?: string | undefined
   firstName?: string | undefined
   lastName?: string | undefined

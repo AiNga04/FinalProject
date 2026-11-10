@@ -15,11 +15,14 @@ export interface DepartmentSearchParams extends PaginationParams {
   search?: string | undefined
   type?: string | undefined
   status?: Status | undefined
+  minCreatedDate?: string | undefined
+  maxCreatedDate?: string | undefined
 }
 
 export interface CreateDepartmentRequest {
   name: string
   type: string
+  accountIds?: number[]
 }
 
 export interface UpdateDepartmentRequest {

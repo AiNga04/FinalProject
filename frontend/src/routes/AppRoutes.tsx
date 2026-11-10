@@ -4,6 +4,7 @@ import ProtectedRoute from '@/routes/ProtectedRoute'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import AccountPage from '@/pages/AccountPage'
+import DepartmentPage from '@/pages/DepartmentPage'
 import NotFound from '@/layouts/NotFound'
 import Forbiddent from '@/layouts/Forbiddent'
 
@@ -24,7 +25,7 @@ export default function AppRoutes() {
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/accounts" element={<AccountPage />} />
             {/* DepartmentPage tạm thời dùng placeholder hoặc AccountPage */}
-            <Route path="/departments" element={<AccountPage />} />
+          <Route path="/departments" element={<DepartmentPage />} />
           </Route>
         </Route>
       </Route>

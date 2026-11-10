@@ -61,7 +61,7 @@ export default function LoginPage() {
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-[#5B4632] mb-1.5">
               Tên đăng nhập
@@ -70,6 +70,7 @@ export default function LoginPage() {
               <User className="w-4 h-4 text-[#5B4632]/50 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
+                autoComplete="username"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -87,6 +88,7 @@ export default function LoginPage() {
               <Lock className="w-4 h-4 text-[#5B4632]/50 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

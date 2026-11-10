@@ -13,6 +13,8 @@ import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 
 import java.util.Locale;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 public final class AccountSpecification {
 
@@ -50,6 +52,14 @@ public final class AccountSpecification {
                             request.getDepartmentId()
                     )
             );
+        }
+
+        if (request.getMinCreatedDate() != null) {
+            where = where.and(new CustomSpecification("minCreatedDate", request.getMinCreatedDate()));
+        }
+
+        if (request.getMaxCreatedDate() != null) {
+            where = where.and(new CustomSpecification("maxCreatedDate", request.getMaxCreatedDate()));
         }
 
         return where;
@@ -120,6 +130,16 @@ public final class AccountSpecification {
                                     '\\'
                             )
                     );
+
+                case "minCreatedDate":
+                    return cb.greaterThanOrEqualTo(
+                            root.get("createdAt"),
+                            ((LocalDate) value).atStartOfDay());
+
+                case "maxCreatedDate":
+                    return cb.lessThanOrEqualTo(
+                            root.get("createdAt"),
+                            ((LocalDate) value).atTime(LocalTime.MAX));
 
                 default:
                     throw new IllegalArgumentException(
