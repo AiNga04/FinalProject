@@ -4,6 +4,10 @@ server:
     context-path: /api/v1
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   config:
     import: "file:./.env[.properties]"
 
@@ -35,6 +39,8 @@ springdoc:
     path: /swagger-ui.html
 
 app:
+  storage:
+    avatar-dir: ./storage/avatars
   jwt:
     issuer: testing-system
     secret-base64: ${JWT_SECRET_BASE64}

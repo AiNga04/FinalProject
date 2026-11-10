@@ -22,6 +22,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.web.multipart.MultipartFile;
+import org.vti.jamie.com.testingsystem.dto.account.AvatarResponse;
+import org.vti.jamie.com.testingsystem.service.AccountAvatarService;
+import java.nio.file.Files;
 
 @RestController
 @Validated
@@ -30,6 +36,7 @@ import org.springframework.http.MediaType;
 @SecurityRequirement(name = "bearerAuth")
 public class AccountController {
     private final IAccountService accountService;
+    private final AccountAvatarService accountAvatarService;
 
     @GetMapping("/me")
     @Operation(summary = "Lấy thông tin tài khoản đang đăng nhập")
@@ -38,6 +45,108 @@ public class AccountController {
         return ResponseEntity.ok(ApiResponse.success(
                 200, "Lấy thông tin tài khoản thành công", account
         ));
+    }
+
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Cập nhật avatar tài khoản hiện tại")
+    public ResponseEntity<ApiResponse<AvatarResponse>> uploadAvatar(
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) {
+        Long accountId = Long.valueOf(jwt.getSubject());
+        return ResponseEntity.ok(ApiResponse.success(
+                "Cập nhật avatar thành công",
+                accountAvatarService.upload(accountId, file, accountId)));
+    }
+
+    @GetMapping("/me/avatar")
+    @Operation(summary = "Lấy thông tin avatar hiện tại")
+    public ResponseEntity<ApiResponse<AvatarResponse>> currentAvatar(
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lấy avatar thành công",
+                accountAvatarService.getCurrent(Long.valueOf(jwt.getSubject()))));
+    }
+
+    @GetMapping("/{accountId}/avatar")
+    @Operation(summary = "ADMIN: lấy thông tin avatar của tài khoản")
+    public ResponseEntity<ApiResponse<AvatarResponse>> accountAvatar(
+            @PathVariable @Positive Long accountId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lấy avatar tài khoản thành công",
+                accountAvatarService.getCurrent(accountId)));
+    }
+
+    @GetMapping("/me/avatar/file")
+    @Operation(summary = "Lấy file avatar hiện tại của chính mình")
+    public ResponseEntity<Resource> currentAvatarFile(
+            @AuthenticationPrincipal Jwt jwt) throws java.io.IOException {
+        var path = accountAvatarService.getCurrentFilePath(Long.valueOf(jwt.getSubject()));
+        Resource resource = new FileSystemResource(path);
+        String detectedType = Files.probeContentType(path);
+        MediaType contentType = detectedType == null
+                ? MediaType.APPLICATION_OCTET_STREAM
+                : MediaType.parseMediaType(detectedType);
+        return ResponseEntity.ok().contentType(contentType).body(resource);
+    }
+
+    @GetMapping("/me/avatar/history")
+    @Operation(summary = "Lấy lịch sử avatar tài khoản hiện tại")
+    public ResponseEntity<ApiResponse<List<AvatarResponse>>> avatarHistory(
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lấy lịch sử avatar thành công",
+                accountAvatarService.getHistory(Long.valueOf(jwt.getSubject()))));
+    }
+
+    @GetMapping("/{accountId}/avatars/history")
+    @Operation(summary = "ADMIN: xem lịch sử avatar của tài khoản")
+    public ResponseEntity<ApiResponse<List<AvatarResponse>>> accountAvatarHistory(
+            @PathVariable @Positive Long accountId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lấy lịch sử avatar thành công",
+                accountAvatarService.getHistory(accountId)));
+    }
+
+    @DeleteMapping("/me/avatar")
+    @Operation(summary = "Xóa mềm avatar hiện tại")
+    public ResponseEntity<ApiResponse<Void>> deleteAvatar(
+            @AuthenticationPrincipal Jwt jwt) {
+        Long accountId = Long.valueOf(jwt.getSubject());
+        accountAvatarService.deleteCurrent(accountId, accountId);
+        return ResponseEntity.ok(ApiResponse.success("Xóa avatar thành công", null));
+    }
+
+    @DeleteMapping("/{accountId}/avatars/{avatarId}")
+    @Operation(summary = "ADMIN: xóa mềm một avatar trong lịch sử")
+    public ResponseEntity<ApiResponse<Void>> deleteAccountAvatar(
+            @PathVariable @Positive Long accountId,
+            @PathVariable @Positive Long avatarId,
+            @AuthenticationPrincipal Jwt jwt) {
+        accountAvatarService.delete(avatarId, Long.valueOf(jwt.getSubject()));
+        return ResponseEntity.ok(ApiResponse.success("Xóa avatar thành công", null));
+    }
+
+    @GetMapping("/avatars/{avatarId}/file")
+    @Operation(summary = "Lấy file avatar")
+    public ResponseEntity<Resource> avatarFile(@PathVariable @Positive Long avatarId) throws java.io.IOException {
+        var path = accountAvatarService.getFilePath(avatarId);
+        Resource resource = new FileSystemResource(path);
+        String detectedType = Files.probeContentType(path);
+        MediaType contentType = detectedType == null
+                ? MediaType.APPLICATION_OCTET_STREAM
+                : MediaType.parseMediaType(detectedType);
+        return ResponseEntity.ok().contentType(contentType).body(resource);
+    }
+
+    @PatchMapping("/{accountId}/avatars/{avatarId}/restore")
+    @Operation(summary = "Khôi phục avatar")
+    public ResponseEntity<ApiResponse<AvatarResponse>> restoreAvatar(
+            @PathVariable @Positive Long accountId,
+            @PathVariable @Positive Long avatarId,
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Khôi phục avatar thành công",
+                accountAvatarService.restore(avatarId, Long.valueOf(jwt.getSubject()))));
     }
 
     @GetMapping

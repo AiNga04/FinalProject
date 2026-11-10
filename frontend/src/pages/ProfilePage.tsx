@@ -1,0 +1,15 @@
+import { useEffect, useState } from 'react'
+import { Loader2, Mail, ShieldCheck, User } from 'lucide-react'
+import { authApi } from '@/api/authApi'
+import { avatarApi } from '@/api/avatarApi'
+import type { Account } from '@/types/account'
+
+export default function ProfilePage() {
+  const [user, setUser] = useState<Account | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => { let cancelled = false; Promise.all([authApi.getMe(), avatarApi.getCurrentFile().catch(() => null)]).then(([account, file]) => { if (!cancelled) { setUser(account.data); if (file) setAvatarUrl(URL.createObjectURL(file)) } }).finally(() => { if (!cancelled) setLoading(false) }); return () => { cancelled = true } }, [])
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#C8792C]" /></div>
+  if (!user) return <p className="text-sm text-rose-600">Không thể tải thông tin tài khoản.</p>
+  return <div className="max-w-3xl space-y-6"><div><span className="text-xs font-semibold uppercase tracking-wider text-[#C8792C]">Tài khoản cá nhân</span><h2 className="text-2xl font-bold text-[#5B4632] mt-1">Hồ sơ của tôi</h2></div><div className="rounded-2xl bg-white border border-[#E8DBC5] p-6"><div className="flex flex-col sm:flex-row items-center sm:items-start gap-6"><div className="w-28 h-28 rounded-3xl overflow-hidden bg-[#FAF6EE] border border-[#E8DBC5] text-3xl font-bold text-[#C8792C] flex items-center justify-center">{avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : user.username.charAt(0).toUpperCase()}</div><div className="flex-1 text-center sm:text-left"><h3 className="text-xl font-bold text-[#5B4632]">{user.lastName} {user.firstName}</h3><p className="text-sm text-[#5B4632]/60 mt-1">@{user.username}</p><span className="inline-flex items-center gap-1 mt-3 px-3 py-1 rounded-full bg-[#C8792C]/10 text-[#C8792C] text-xs font-bold"><ShieldCheck className="w-3.5 h-3.5" />{user.accountType}</span><p className="mt-4 text-xs text-[#5B4632]/60">Bạn có thể đổi avatar bằng cách nhấn vào avatar ở Header.</p></div></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 pt-6 border-t border-[#E8DBC5]"><div className="flex gap-3"><User className="w-4 h-4 text-[#C8792C]" /><div><p className="text-[11px] text-[#5B4632]/50">Họ và tên</p><p className="text-sm font-semibold text-[#5B4632]">{user.lastName} {user.firstName}</p></div></div><div className="flex gap-3"><Mail className="w-4 h-4 text-[#C8792C]" /><div><p className="text-[11px] text-[#5B4632]/50">Email</p><p className="text-sm font-semibold text-[#5B4632]">{user.email}</p></div></div><div><p className="text-[11px] text-[#5B4632]/50">Trạng thái</p><p className="text-sm font-semibold text-emerald-700">{user.status}</p></div><div><p className="text-[11px] text-[#5B4632]/50">Ngày tạo</p><p className="text-sm font-semibold text-[#5B4632]">{new Date(user.createdAt).toLocaleDateString('vi-VN')}</p></div></div></div></div>
+}

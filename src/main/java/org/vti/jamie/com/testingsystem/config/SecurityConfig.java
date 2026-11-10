@@ -123,7 +123,7 @@ public class SecurityConfig {
                 .permitAll()
 
                 // Mọi tài khoản đã xác thực đều được xem thông tin của chính mình.
-                .requestMatchers("/accounts/me", "/auth/logout")
+                .requestMatchers("/accounts/me", "/accounts/me/avatar/**", "/auth/logout")
                 .authenticated()
 
                 // Admin only

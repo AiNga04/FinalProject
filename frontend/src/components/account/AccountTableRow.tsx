@@ -1,7 +1,8 @@
-import { Edit, Trash2, RotateCcw } from 'lucide-react'
+import { Edit, Eye, Trash2, RotateCcw } from 'lucide-react'
 import type { Account } from '@/types/account'
 import AccountStatusBadge from './AccountStatusBadge'
 import AccountRoleBadge from './AccountRoleBadge'
+import { Link } from 'react-router-dom'
 
 interface AccountTableRowProps {
   account: Account
@@ -43,7 +44,7 @@ export default function AccountTableRow({
             {account.username.charAt(0).toUpperCase()}
           </div>
           <div>
-            <p className="font-bold text-[#5B4632]">{account.username}</p>
+            <Link to={`/accounts/${account.id}`} className="font-bold text-[#5B4632] hover:text-[#C8792C]">{account.username}</Link>
             <p className="text-[11px] text-[#5B4632]/70">
               {account.lastName} {account.firstName}
             </p>
@@ -84,6 +85,13 @@ export default function AccountTableRow({
             </button>
           ) : (
             <>
+              <Link
+                to={`/accounts/${account.id}`}
+                title="Xem chi tiết"
+                className="p-1.5 rounded-lg text-[#5B4632]/70 hover:text-[#C8792C] hover:bg-[#FAF6EE] transition cursor-pointer"
+              >
+                <Eye className="w-4 h-4" />
+              </Link>
               <button
                 type="button"
                 onClick={() => onEdit(account)}
