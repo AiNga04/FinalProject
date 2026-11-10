@@ -35,6 +35,7 @@ interface AccountBulkBarProps {
   currentStatus: string;
   onAction: (status: Status) => void;
   onClearSelection: () => void;
+  itemLabel?: string;
 }
 
 export default function AccountBulkBar({
@@ -42,6 +43,7 @@ export default function AccountBulkBar({
   currentStatus,
   onAction,
   onClearSelection,
+  itemLabel = "tài khoản",
 }: AccountBulkBarProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -67,7 +69,7 @@ export default function AccountBulkBar({
     <div className="flex items-center gap-3 px-4 py-2.5 bg-[#C8792C]/10 border-b border-[#C8792C]/20 animate-in slide-in-from-top-2 duration-200">
       {/* Đã chọn */}
       <span className="text-xs font-semibold text-[#C8792C]">
-        Đã chọn {selectedCount} tài khoản
+        Đã chọn {selectedCount} {itemLabel}
       </span>
 
       <div className="h-3.5 w-px bg-[#C8792C]/30" />

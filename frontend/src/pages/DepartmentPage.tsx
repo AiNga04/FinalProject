@@ -12,6 +12,7 @@ import DepartmentFilterBar from "@/components/department/DepartmentFilterBar";
 import DepartmentTable from "@/components/department/DepartmentTable";
 import DepartmentFormModal from "@/components/department/DepartmentFormModal";
 import DepartmentStatusModal from "@/components/department/DepartmentStatusModal";
+import AccountBulkBar from "@/components/account/AccountBulkBar";
 
 const PAGE_SIZE = 10;
 
@@ -110,7 +111,6 @@ export default function DepartmentPage() {
     await fetchDepartments();
   };
 
-  const actionOptions: Status[] = ["ACTIVE", "INACTIVE", "DELETED"];
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -165,49 +165,25 @@ export default function DepartmentPage() {
             setPage(1);
           }}
         />
-        {selected.length > 0 && (
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-[#C8792C]/10 border-b border-[#C8792C]/20 text-xs">
-            <b className="text-[#C8792C]">
-              Đã chọn {selected.length} phòng ban
-            </b>
-            <select
-              defaultValue=""
-              onChange={(event) => {
-                const next = event.target.value as Status;
-                if (next)
-                  setStatusDialog({
-                    ids: selected,
-                    status: next,
-                    title: "Cập nhật trạng thái",
-                    message: `Bạn có chắc muốn cập nhật ${selected.length} phòng ban đã chọn?`,
-                  });
-              }}
-              className="px-3 py-1.5 rounded-lg border border-[#E8DBC5] text-xs"
-            >
-              <option value="">Hành động</option>
-              {actionOptions.map((action) => (
-                <option
-                  key={action}
-                  value={action}
-                  disabled={action === status}
-                >
-                  {action === "ACTIVE"
-                    ? "Kích hoạt"
-                    : action === "INACTIVE"
-                      ? "Vô hiệu hóa"
-                      : "Xóa mềm"}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => setSelected([])}
-              className="ml-auto text-[#5B4632]/60 cursor-pointer"
-            >
-              Bỏ chọn
-            </button>
-          </div>
-        )}
+        <AccountBulkBar
+          selectedCount={selected.length}
+          currentStatus={status}
+          itemLabel="phòng ban"
+          onAction={(nextStatus) =>
+            setStatusDialog({
+              ids: selected,
+              status: nextStatus,
+              title:
+                nextStatus === "DELETED"
+                  ? "Xóa phòng ban đã chọn"
+                  : nextStatus === "ACTIVE"
+                    ? "Kích hoạt phòng ban đã chọn"
+                    : "Vô hiệu hóa phòng ban đã chọn",
+              message: `Bạn có chắc muốn cập nhật ${selected.length} phòng ban đã chọn?`,
+            })
+          }
+          onClearSelection={() => setSelected([])}
+        />
         <DepartmentTable
           departments={departments}
           loading={loading}
