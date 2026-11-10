@@ -14,6 +14,10 @@ export const accountApi = {
     return axiosClient.get<unknown, ApiResponse<PageResponse<Account>>>('/accounts', { params })
   },
 
+  exportAccounts: (params?: AccountSearchParams) => {
+    return axiosClient.get<unknown, Blob>('/accounts/export', { params, responseType: 'blob' })
+  },
+
   // Lấy chi tiết tài khoản theo ID
   getAccountById: (id: number) => {
     return axiosClient.get<unknown, ApiResponse<Account>>(`/accounts/${id}`)

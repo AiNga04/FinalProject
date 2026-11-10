@@ -20,6 +20,7 @@ import org.vti.jamie.com.testingsystem.exception.ResourceNotFoundException;
 import org.vti.jamie.com.testingsystem.mapper.AccountMapper;
 import org.vti.jamie.com.testingsystem.repository.IRefreshTokenRepository;
 import org.vti.jamie.com.testingsystem.dto.account.AccountResponse;
+import org.vti.jamie.com.testingsystem.dto.account.AccountExportRow;
 import org.vti.jamie.com.testingsystem.repository.IAccountRepository;
 import org.vti.jamie.com.testingsystem.service.IAccountService;
 import org.vti.jamie.com.testingsystem.specification.AccountSpecification;
@@ -27,6 +28,10 @@ import org.vti.jamie.com.testingsystem.util.common.EN_Status;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
 @RequiredArgsConstructor
@@ -78,6 +83,48 @@ public class AccountService implements IAccountService {
 
         return accountRepository.findAll(where, pagingOnly)
                 .map(accountMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportAccounts(AccountSearchForm request) {
+        List<AccountExportRow> accounts = accountRepository
+                .findAll(AccountSpecification.buildWhere(request))
+                .stream()
+                .map(accountMapper::toExportRow)
+                .toList();
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Accounts");
+            String[] headers = {"ID", "Username", "Email", "Họ", "Tên", "Vai trò", "Department ID", "Trạng thái", "Ngày tạo"};
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            Row header = sheet.createRow(0);
+            for (int index = 0; index < headers.length; index++) {
+                Cell cell = header.createCell(index);
+                cell.setCellValue(headers[index]);
+                cell.setCellStyle(headerStyle);
+            }
+            for (int rowIndex = 0; rowIndex < accounts.size(); rowIndex++) {
+                AccountExportRow account = accounts.get(rowIndex);
+                Row row = sheet.createRow(rowIndex + 1);
+                row.createCell(0).setCellValue(account.getId());
+                row.createCell(1).setCellValue(account.getUsername());
+                row.createCell(2).setCellValue(account.getEmail());
+                row.createCell(3).setCellValue(account.getLastName());
+                row.createCell(4).setCellValue(account.getFirstName());
+                row.createCell(5).setCellValue(account.getAccountType());
+                if (account.getDepartmentId() != null) row.createCell(6).setCellValue(account.getDepartmentId());
+                row.createCell(7).setCellValue(account.getStatus());
+                row.createCell(8).setCellValue(account.getCreatedAt().toString());
+            }
+            for (int index = 0; index < headers.length; index++) sheet.autoSizeColumn(index);
+            workbook.write(output);
+            return output.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Không thể tạo file Excel tài khoản", exception);
+        }
     }
 
     @Override

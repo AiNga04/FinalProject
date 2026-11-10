@@ -20,6 +20,8 @@ import org.vti.jamie.com.testingsystem.dto.PageResponse;
 import org.vti.jamie.com.testingsystem.service.IAccountService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 @RestController
 @Validated
@@ -49,6 +51,16 @@ public class AccountController {
                 "Lấy danh sách tài khoản thành công",
                 PageResponse.from(page))
         );
+    }
+
+    @GetMapping(value = "/export", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    @Operation(summary = "ADMIN: xuất danh sách tài khoản ra Excel")
+    public ResponseEntity<byte[]> export(
+            @Valid @ParameterObject @ModelAttribute AccountSearchForm request) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=accounts.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(accountService.exportAccounts(request));
     }
 
     @GetMapping("/{id}")

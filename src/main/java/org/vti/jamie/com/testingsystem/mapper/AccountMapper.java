@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.vti.jamie.com.testingsystem.form.account.CreateAccountForm;
 import org.vti.jamie.com.testingsystem.form.account.UpdateAccountForm;
 import org.vti.jamie.com.testingsystem.dto.account.AccountResponse;
+import org.vti.jamie.com.testingsystem.dto.account.AccountExportRow;
 import org.vti.jamie.com.testingsystem.entity.Account;
 import org.vti.jamie.com.testingsystem.util.common.EN_AccountType;
 
@@ -50,5 +51,19 @@ public class AccountMapper {
 
     public AccountResponse toResponse(Account account) {
         return modelMapper.map(account, AccountResponse.class);
+    }
+
+    public AccountExportRow toExportRow(Account account) {
+        AccountExportRow row = new AccountExportRow();
+        row.setId(account.getId());
+        row.setUsername(account.getUsername());
+        row.setEmail(account.getEmail());
+        row.setLastName(account.getLastName());
+        row.setFirstName(account.getFirstName());
+        row.setAccountType(account.getAccountType().name());
+        row.setDepartmentId(account.getDepartmentId());
+        row.setStatus(account.getStatus().name());
+        row.setCreatedAt(account.getCreatedAt());
+        return row;
     }
 }

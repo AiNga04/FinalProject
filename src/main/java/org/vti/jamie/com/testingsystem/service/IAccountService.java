@@ -14,6 +14,8 @@ public interface IAccountService {
 
     Page<AccountResponse> getAccounts(AccountSearchForm request, Pageable pageable);
 
+    byte[] exportAccounts(AccountSearchForm request);
+
     AccountResponse getAccount(Long id);
 
     AccountResponse create(CreateAccountForm request, String subject);
